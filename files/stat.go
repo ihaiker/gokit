@@ -16,14 +16,14 @@ func NotExist(fileName string) bool {
 
 // check file is dir
 func IsDir(filename string) bool {
-	if NowExist(filename) {
+	if NotExist(filename) {
 		return false
 	}
-	fs, err := os.Stat(filename)
+	fs, _ := os.Stat(filename)
 	return fs.IsDir()
 }
 
-func IsExistFile(filename string)  {
+func IsExistFile(filename string) bool  {
 	fs, err := os.Stat(filename)
 
 	if err == nil || os.IsExist(err) {
@@ -33,7 +33,7 @@ func IsExistFile(filename string)  {
 	}
 }
 
-func IsExistFile(filename string)  {
+func IsExistDir(filename string) bool {
 	fs, err := os.Stat(filename)
 	if err == nil || os.IsExist(err) {
 		return fs.IsDir()
