@@ -1,7 +1,7 @@
 package files
 
 import "os"
-
+import "errors"
 
 // file is exit
 func Exist(filename string) bool {
@@ -23,12 +23,12 @@ func IsDir(filename string) bool {
 	return fs.IsDir()
 }
 
-func IsExistFile(filename string) bool  {
+func IsExistFile(filename string) bool {
 	fs, err := os.Stat(filename)
 
 	if err == nil || os.IsExist(err) {
 		return ! fs.IsDir()
-	}else{
+	} else {
 		return false;
 	}
 }
@@ -37,7 +37,16 @@ func IsExistDir(filename string) bool {
 	fs, err := os.Stat(filename)
 	if err == nil || os.IsExist(err) {
 		return fs.IsDir()
-	}else{
+	} else {
 		return false;
 	}
+}
+
+func ListFilenames(dir string) ([]string, error) {
+	f, err := os.Open(dir)
+	if err != nil {
+		return nil, errors.New("Error opening directory " + dir)
+	}
+	defer f.Close()
+	return f.Readdirnames(-1)
 }
