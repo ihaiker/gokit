@@ -1,7 +1,11 @@
 package files
 
 import "os"
-import "errors"
+import (
+	"errors"
+	"path/filepath"
+	"strings"
+)
 
 // file is exit
 func Exist(filename string) bool {
@@ -49,4 +53,12 @@ func ListFilenames(dir string) ([]string, error) {
 	}
 	defer f.Close()
 	return f.Readdirnames(-1)
+}
+
+func Name(path string) (string, error) {
+	if absPath, err := filepath.Abs(path); err != nil {
+		return nil, err
+	} else {
+		return absPath[strings.LastIndex(absPath, "/") + 1:], nil
+	}
 }
