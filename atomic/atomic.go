@@ -10,9 +10,9 @@ func NewInt32() (*AtomicInt32) {
 
 
 func NewInt64V(value int64) (*AtomicInt64) {
-	return &AtomicInt32{value:value}
+	return &AtomicInt64{value:value}
 }
 
 func NewInt64() (*AtomicInt64) {
-	return NewInt32V(0)
+	return NewInt64V(0)
 }
