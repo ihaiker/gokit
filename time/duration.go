@@ -16,3 +16,15 @@ func Duration(d time.Duration, num int) time.Duration {
 func Days(num int) time.Duration {
 	return Duration(Day, num)
 }
+
+func Hours(num int) time.Duration {
+	return Duration(time.Hour, num)
+}
+
+func Minutes(num int) time.Duration {
+	return Duration(time.Minute, num)
+}
+
+func Seconds(num int) time.Duration {
+	return Duration(time.Second,num)
+}
