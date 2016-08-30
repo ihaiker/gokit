@@ -57,7 +57,7 @@ func ListFilenames(dir string) ([]string, error) {
 
 func Name(path string) (string, error) {
 	if absPath, err := filepath.Abs(path); err != nil {
-		return nil, err
+		return "", err
 	} else {
 		return absPath[strings.LastIndex(absPath, "/") + 1:], nil
 	}
