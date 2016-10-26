@@ -1,4 +1,4 @@
-package runtimekit
+package runtimeKit
 
 import (
 	"runtime"

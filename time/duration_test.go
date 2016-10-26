@@ -1,4 +1,4 @@
-package timekit
+package timeKit
 
 import (
 	"testing"

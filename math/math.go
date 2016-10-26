@@ -1,10 +1,11 @@
-package math
+package mathKit
 
 import (
 	"fmt"
 	"strconv"
 )
 
+//保留小数位数
 func Scale(num float32, size int) float32 {
 	str := fmt.Sprintf(("%." + strconv.Itoa(size) + "f"), num)
 	n, _ := strconv.ParseFloat(str, 32)
