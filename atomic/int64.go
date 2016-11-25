@@ -44,3 +44,50 @@ func (self *AtomicInt64) GetAndAdd(i int64) (int64) {
 func (self *AtomicInt64) CompareAndSet(expect int64, update  int64) (bool) {
 	return atomic.CompareAndSwapInt64(&self.value, expect, update)
 }
+
+
+
+
+
+type AtomicUInt64 struct {
+	value uint32
+}
+
+func (self *AtomicUInt64) Get() uint64 {
+	return atomic.LoadUint64(&self.value)
+}
+
+func (self *AtomicUInt64) IncrementAndGet() uint64 {
+	return atomic.AddUint64(&self.value, 1)
+}
+
+func (self *AtomicUInt64) GetAndIncrement() (uint64) {
+	return self.GetAndAdd(1)
+}
+
+func (self *AtomicUInt64) DecrementAndGet() (uint64) {
+	return self.AddAndGet(-1)
+}
+
+func (self *AtomicUInt64) GetAndDecrement() (uint64) {
+	return self.GetAndAdd(-1)
+}
+
+func (self *AtomicUInt64) AddAndGet(i uint64) (uint64) {
+	return atomic.AddUint64(&self.value, i)
+}
+
+func (self *AtomicUInt64) GetAndAdd(i uint64) (uint64) {
+	var ret int32
+	for ; ; {
+		ret = atomic.LoadUint64(&self.value)
+		if atomic.CompareAndSwapUint64(&self.value, ret, ret + i) {
+			break
+		}
+	}
+	return ret
+}
+
+func (self *AtomicUInt64) CompareAndSet(expect uint64, update  uint64) (bool) {
+	return atomic.CompareAndSwapUint64(&self.value, expect, update)
+}

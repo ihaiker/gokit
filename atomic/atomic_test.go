@@ -11,6 +11,12 @@ func TestInt32(t *testing.T) {
 	a.Get()
 }
 
+
+func TestUInt32(t *testing.T) {
+	a := NewInt32()
+	a.Get()
+}
+
 func TestNewInt32V(t *testing.T) {
 	a := NewInt32V(1)
 	a.Get()

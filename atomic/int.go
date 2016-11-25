@@ -44,3 +44,49 @@ func (self *AtomicInt32) GetAndAdd(i int32) (int32) {
 func (self *AtomicInt32) CompareAndSet(expect int32, update  int32) (bool) {
 	return atomic.CompareAndSwapInt32(&self.value, expect, update)
 }
+
+
+
+
+type AtomicUInt32 struct {
+	value uint32
+}
+
+func (self *AtomicUInt32) Get() uint32 {
+	return atomic.LoadUint32(&self.value)
+}
+
+func (self *AtomicUInt32) IncrementAndGet() uint32 {
+	return atomic.AddUint32(&self.value, 1)
+}
+
+func (self *AtomicUInt32) GetAndIncrement() (uint32) {
+	return self.GetAndAdd(1)
+}
+
+func (self *AtomicUInt32) DecrementAndGet() (uint32) {
+	return self.AddAndGet(-1)
+}
+
+func (self *AtomicUInt32) GetAndDecrement() (uint32) {
+	return self.GetAndAdd(-1)
+}
+
+func (self *AtomicUInt32) AddAndGet(i uint32) (uint32) {
+	return atomic.AddUint32(&self.value, i)
+}
+
+func (self *AtomicUInt32) GetAndAdd(i uint32) (uint32) {
+	var ret int32
+	for ; ; {
+		ret = atomic.LoadUint32(&self.value)
+		if atomic.CompareAndSwapUint32(&self.value, ret, ret + i) {
+			break
+		}
+	}
+	return ret
+}
+
+func (self *AtomicUInt32) CompareAndSet(expect uint32, update  uint32) (bool) {
+	return atomic.CompareAndSwapUint32(&self.value, expect, update)
+}
