@@ -31,7 +31,11 @@ func (self *LLDBEngine) Scan(startKey, endKey string, limit int) (Iterator, erro
 	}
 	bp := &util.Range{Start:startRange, Limit:endRange}
 
-	it := self.data.NewIterator(bp, self.readOptions)
+	sn,err := self.data.GetSnapshot()
+	if err != nil {
+		return nil,err
+	}
+	it := sn.NewIterator(bp, self.readOptions)
 	if err := it.Error(); err != nil {
 		return nil, err
 	}
@@ -40,7 +44,7 @@ func (self *LLDBEngine) Scan(startKey, endKey string, limit int) (Iterator, erro
 		it.Last();
 	}
 
-	return NewKVIterator(startKey, endKey, limit, FORWARD, it), nil
+	return newKVIterator(startKey, endKey, limit, FORWARD, it), nil
 }
 
 func (self *LLDBEngine) RScan(startKey, endKey string, limit int) (Iterator, error) {
@@ -51,15 +55,17 @@ func (self *LLDBEngine) RScan(startKey, endKey string, limit int) (Iterator, err
 	} else {
 		endRange = EncodeKV(endKey + "\001")
 	}
-
 	bp := &util.Range{Start:startRange, Limit:endRange}
 
-	it := self.data.NewIterator(bp, self.readOptions)
+	sn,err := self.data.GetSnapshot()
+	if err != nil {
+		return nil,err
+	}
+	it := sn.NewIterator(bp, self.readOptions)
 	if err := it.Error(); err != nil {
 		return nil, err
 	}
 	it.Last()
 	it.Seek(endRange)
-
-	return NewKVIterator(startKey, endKey, limit, BACKWARD, it), nil
+	return newKVIterator(startKey, endKey, limit, BACKWARD, it), nil
 }

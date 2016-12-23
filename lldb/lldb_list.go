@@ -6,6 +6,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"fmt"
+	"github.com/ihaiker/gokit/commons"
 )
 
 const (
@@ -19,8 +20,8 @@ func (self *LLDBEngine) getQueueIndex(key string) (uint64, uint64, error) {
 	if leveldb.ErrNotFound == err {
 		return QUEUE_INIT_SEQ, QUEUE_INIT_SEQ + 1, err
 	} else {
-		min, _ := byte2uint64(val[0:8])
-		max, _ := byte2uint64(val[8:])
+		min := commonKit.ToUInt64(val[0:8])
+		max := commonKit.ToUInt64(val[8:])
 		return min, max, nil
 	}
 }
@@ -32,8 +33,8 @@ func (self *LLDBEngine) updateQueueIndex(batch *leveldb.Batch, key string, min, 
 		batch.Delete(EncodeQueueIndex(key))
 	} else {
 		out := make([]byte, 16)
-		copy(out[:8], uint642byte(min))
-		copy(out[8:], uint642byte(max))
+		commonKit.PutUInt64(out[:8],min)
+		commonKit.PutUInt64(out[8:],max)
 		batch.Put(EncodeQueueIndex(key), out)
 	}
 }
@@ -130,7 +131,7 @@ func (self *LLDBEngine) QList(startKey, endKey string, limit int) (Iterator, err
 		it.Next()
 	}
 
-	return NewQueueIterator(startKey, endKey, limit, FORWARD, it), nil
+	return newQueueIterator(startKey, endKey, limit, FORWARD, it), nil
 }
 
 func (self *LLDBEngine) QRList(startKey, endKey string, limit int) (Iterator, error) {
@@ -152,7 +153,7 @@ func (self *LLDBEngine) QRList(startKey, endKey string, limit int) (Iterator, er
 	} else {
 		it.Prev()
 	}
-	return NewQueueIterator(startKey, endKey, limit, BACKWARD, it), nil
+	return newQueueIterator(startKey, endKey, limit, BACKWARD, it), nil
 }
 
 func (self *LLDBEngine) _trim(key string, limit uint64, dir Direction) (int, error) {
@@ -220,7 +221,7 @@ func (self *LLDBEngine) QRange(key string, offset, limit uint64) (Iterator, erro
 		if err := it.Error(); err != nil {
 			return nil, err
 		}
-		return NewQueueValueIterator(startKey, endKey, int(limit), FORWARD, it), nil
+		return newQueueValueIterator(startKey, endKey, int(limit), FORWARD, it), nil
 	}
 }
 func (self *LLDBEngine) QSlice(key string, begin, end int64) (Iterator, error) {
@@ -242,6 +243,6 @@ func (self *LLDBEngine) QSlice(key string, begin, end int64) (Iterator, error) {
 		if err := it.Error(); err != nil {
 			return nil, err
 		}
-		return NewQueueValueIterator(startKey, endKey, int(math.MaxInt8), FORWARD, it), nil
+		return newQueueValueIterator(startKey, endKey, int(math.MaxInt8), FORWARD, it), nil
 	}
 }

@@ -2,101 +2,97 @@
 package lldb
 
 import (
-	"os"
-	"runtime"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/opt"
-	"github.com/ihaiker/gokit/files"
-	"errors"
-	"fmt"
-	"log"
-	"github.com/syndtr/goleveldb/leveldb/util"
-	"path/filepath"
-	"io"
+    "os"
+    "github.com/syndtr/goleveldb/leveldb"
+    "github.com/syndtr/goleveldb/leveldb/opt"
+    "github.com/ihaiker/gokit/files"
+    "errors"
+    "fmt"
+    "log"
+    "github.com/syndtr/goleveldb/leveldb/util"
+    "bytes"
 )
 
-var LSCL_DEFAULT_PATH string
-
 type LLDBEngine struct {
-	data         *leveldb.DB
-	meta         *leveldb.DB
-	writeOptions *opt.WriteOptions
-	readOptions  *opt.ReadOptions
+    data         *leveldb.DB
+    writeOptions *opt.WriteOptions
+    readOptions  *opt.ReadOptions
+    config       *Config
 }
 
+//close the leveldb connect.
 func (self *LLDBEngine) Close() error {
-	if self.data != nil {
-		if err := self.data.Close(); err != nil {
-			return err
-		}
-	}
-	if self.meta != nil {
-		if err := self.meta.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
+    if self.data != nil {
+        if err := self.data.Close(); err != nil {
+            return err
+        }
+    }
+    return nil
 }
 
-func init() {
-	switch runtime.GOOS {
-	case "windows":
-		LSCL_DEFAULT_PATH = os.Getenv("APPDATA") + string(filepath.Separator) + "lldb"
-	default:
-		LSCL_DEFAULT_PATH = os.Getenv("HOME") + string(filepath.Separator) + ".lldb"
-	}
+func (self *LLDBEngine) FlushDB() error {
+    sn, err := self.data.GetSnapshot()
+    if err != nil {
+        return err
+    }
+    it := sn.NewIterator(&util.Range{}, self.readOptions)
+    for ; it.Next(); {
+        if err := self.data.Delete(it.Key(), self.writeOptions); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
+func (self *LLDBEngine) toTest() string {
+    it := self.data.NewIterator(&util.Range{}, self.readOptions)
+    w := bytes.NewBufferString("")
+    for ; it.Next(); {
+        w.WriteString(string(it.Key()))
+        w.WriteString(" = ")
+        w.WriteString(string(it.Value()))
+        w.WriteString("\n")
+    }
+    return w.String()
 }
 
 //Use the default location initialization `leveldb` library
-func New() (*LLDBEngine, error) {
-	return NewWithPath(LSCL_DEFAULT_PATH)
+func Default() (*LLDBEngine, error) {
+    cfg,err := SetConfig("")
+    if err != nil {
+        return nil,err
+    }
+    return New(cfg)
 }
 
 //Using the location specified initialization `leveldb` library
-func NewWithPath(dbPath string) (*LLDBEngine, error) {
-	return NewWith(dbPath, nil)
+func NewWith(cfgPath string) (*LLDBEngine, error) {
+    if !fileKit.IsExistFile(cfgPath) {
+        return nil,errors.New("the config file not found !")
+    }
+    cfg,err := SetConfig(cfgPath)
+    if err != nil {
+        return nil,err
+    }
+    return New(cfg)
 }
 
-func NewWith(path string, opt *opt.Options) (*LLDBEngine, error) {
-	log.Printf("init lldb datapath: %s", path)
-
-	if !fileKit.Exist(path) {
-		if err := os.MkdirAll(path, os.ModeDir); err != nil {
-			return nil, err
-		}
-	} else if !fileKit.IsDir(path) {
-		return nil, errors.New(fmt.Sprintf("the path %s not a folder", path))
-	}
-
-	data, err := leveldb.OpenFile(path + "/data", opt)
-	if err != nil {
-		return nil, err
-	}
-	meta, err := leveldb.OpenFile(path + "/meta", opt)
-	if err != nil {
-		return nil, err
-	}
-	return &LLDBEngine{meta:meta, data:data}, nil
+func New(cfg *Config) (*LLDBEngine, error) {
+    path := cfg.GetDataPath()
+    log.Printf("init lldb datapath: %s", path)
+    
+    if !fileKit.Exist(path) {
+        if err := os.MkdirAll(path, os.ModeDir); err != nil {
+            return nil, err
+        }
+    } else if !fileKit.IsDir(path) {
+        return nil, errors.New(fmt.Sprintf("the path %s not a folder", path))
+    }
+    data, err := leveldb.OpenFile(path, cfg.GetOptions())
+    if err != nil {
+        return nil, err
+    }
+    
+    return &LLDBEngine{data:data,config:cfg}, nil
 }
 
-func (self *LLDBEngine) Data() *leveldb.DB {
-	return self.data
-}
-
-func (self *LLDBEngine) Meta() *leveldb.DB {
-	return self.meta
-}
-
-func (self *LLDBEngine) FlushDB() {
-	it := self.data.NewIterator(&util.Range{}, self.readOptions)
-	for ; it.Next(); {
-		self.data.Delete(it.Key(), self.writeOptions)
-	}
-}
-
-func (self *LLDBEngine) toTest(out io.Writer) {
-	it := self.data.NewIterator(&util.Range{}, self.readOptions)
-	for ; it.Next(); {
-		fmt.Fprint(out, string(it.Key())," = ", string(it.Value()),"\n")
-	}
-}
