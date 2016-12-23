@@ -15,3 +15,15 @@ func Switch(check, other interface{}) interface{} {
 		}
 	}
 }
+
+
+//迭代器
+type Iterator interface {
+	HasNext() bool
+	Next() interface{}
+}
+
+type CloseIterator interface {
+	Iterator
+	Close() error
+}

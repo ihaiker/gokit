@@ -368,17 +368,17 @@ func TestQueueRange(t *testing.T) {
 	store.toTest(os.Stdout)
 
 	t.Log("qslice 2 2")
-	if it, err := store.QRange("b1", 2, 2); err !=nil {
+	if it, err := store.QRange("b1", 2, 2); err != nil {
 		t.Error(err)
-	}else{
+	} else {
 		for ; it.Next(); {
 			t.Log(string(it.Value()))
 		}
 	}
 	t.Log("qslice 1 -1")
-	if it, err := store.QSlice("b1", -5, -1); err !=nil {
+	if it, err := store.QSlice("b1", -5, -1); err != nil {
 		t.Error(err)
-	}else{
+	} else {
 		for ; it.Next(); {
 			t.Log(string(it.Value()))
 		}
@@ -390,4 +390,66 @@ func TestToTest(t *testing.T) {
 	store := newDB(t)
 	defer store.Close()
 	store.toTest(os.Stdout)
+}
+
+func TestSSet(t *testing.T) {
+	store := newDB(t)
+	defer store.Close()
+	store.FlushDB()
+
+	store.SAdd("a", []byte("1"))
+	store.SAdd("t", []byte("1"))
+
+	store.SAdd("t1", []byte("1"))
+	store.SAdd("t1", []byte("2"))
+	store.SAdd("t1", []byte("2"))
+	store.SAdd("t1", []byte("3"))
+
+	store.SAdd("t2", []byte("1"))
+	store.SAdd("t2", []byte("2"))
+
+	{
+		s, e := store.SSize("t1")
+		t.Log("size t1", s, e)
+	}
+	{
+		s, e := store.SDel("t1", []byte("1"))
+		t.Log("delete t1 1 ", s, e)
+	}
+	{
+		s, e := store.SSize("t1")
+		t.Log("size t1 ", s, e)
+	}
+	{
+		s, e := store.SExits("t1", []byte("1"))
+		t.Log("exit t1 1 ", s, e)
+	}
+	{
+		s, e := store.SExits("t1", []byte("2"))
+		t.Log("exit t1 2", s, e)
+	}
+
+	{
+		t.Log("================== smembers t1")
+		it, err := store.SMembers("t1")
+		if err != nil {
+			t.Error(err); return
+		}
+		defer it.Release()
+		for ; it.Next(); {
+			t.Log(it.Get(), string(it.Value()))
+		}
+	}
+
+	{
+		t.Log("================== slist '' '' 10 ")
+		it, err := store.SList("a", "t2", 100)
+		if err != nil {
+			t.Error(err); return
+		}
+		defer it.Release()
+		for ; it.Next(); {
+			t.Log(it.Get())
+		}
+	}
 }

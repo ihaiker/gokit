@@ -152,3 +152,17 @@ func DecodeSet(encodeKey []byte) (string, []byte) {
 func IsSet(encodeKey []byte) bool {
 	return encodeKey[0] == dt_sset
 }
+
+func EncodeSetSize(key string) []byte {
+	keyByes := []byte(key)
+	bs := make([]byte,len(keyByes) + 1)
+	bs[0] = dt_ssize
+	copy(bs[1:],keyByes)
+	return bs
+}
+func IsSetSize(encodeKey []byte) bool {
+	return encodeKey[0] == dt_ssize
+}
+func DecodeSetSize(encodeKey []byte) string {
+	return string(encodeKey[1:])
+}
