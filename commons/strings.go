@@ -15,7 +15,14 @@ func Switch(check, other interface{}) interface{} {
 		}
 	}
 }
-
+//和三元判断符同义
+func IfElse(check bool,ifTrue, ifElse interface{}) interface{} {
+	if check {
+		return ifTrue
+	}else{
+		return ifElse
+	}
+}
 
 //迭代器
 type Iterator interface {

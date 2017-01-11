@@ -4,7 +4,14 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"math/rand"
+	"time"
+	"github.com/ihaiker/gokit/commons"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func _add_set(self *LLDBEngine, batch *leveldb.Batch, key string, value []byte) (int, error) {
 	encodeKey := EncodeSet(key, value)
@@ -48,7 +55,7 @@ func _update_sset_size(self *LLDBEngine, batch *leveldb.Batch, key string, incr 
 		batch.Delete(EncodeSetSize(key))
 		return 0, nil
 	} else {
-		batch.Put(EncodeSetSize(key), uint642byte(size))
+		batch.Put(EncodeSetSize(key), commonKit.UInt64(size))
 		return size, nil
 	}
 }
@@ -101,8 +108,28 @@ func (self *LLDBEngine) SMembers(key string) (Iterator, error) {
 }
 
 func (self *LLDBEngine) SRandomMember(key string) ([]byte, error) {
-	size,err := self.SSize(key)
+	size, err := self.SSize(key)
+	if err != nil {
+		return nil, err
+	}
+	if size == 0 {
+		return nil, nil
+	}
+	idx := rand.Uint64() % size
 
+	it := self.data.NewIterator(&util.Range{Start:EncodeSet(key, []byte{})}, self.readOptions)
+	if err := it.Error(); err != nil {
+		return nil, err
+	}
+	var i uint64 = 0
+	for ; i < idx && it.Next(); i++ {
+		//k := it.Key()
+		//v := it.Value()
+	}
+	if it.Next() {
+		_, v := DecodeSet(it.Key())
+		return v, nil
+	}
 	return nil, nil
 }
 
@@ -125,7 +152,7 @@ func (self *LLDBEngine) SList(startKey, endKey string, limit int) (Iterator, err
 	if err := it.Error(); err != nil {
 		return nil, err
 	}
-	return NewSetIterator(startKey, endKey, limit, FORWARD, it), nil
+	return newSetIterator(startKey, endKey, limit, FORWARD, it), nil
 }
 
 func (self *LLDBEngine) SSize(key string) (uint64, error) {
@@ -137,7 +164,6 @@ func (self *LLDBEngine) SSize(key string) (uint64, error) {
 			return 0, err
 		}
 	} else {
-		s, _ := byte2uint64(val)
-		return s, nil
+		return commonKit.ToUInt64(val), nil
 	}
 }

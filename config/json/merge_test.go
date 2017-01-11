@@ -39,7 +39,7 @@ var json_dst = `
 `
 
 func TestMerge(t *testing.T) {
-	a := JsonMerger{}
+	a := Merger()
 
 	a.SetSrcString(json_src)
 
@@ -53,7 +53,7 @@ func TestMerge(t *testing.T) {
 }
 
 func TestMergeTwo(t *testing.T) {
-	a := JsonMerger{}
+	a := Merger()
 	a.SetSrcString(`{"one":1,"s":"a"}`)
 	a.SetDstString(`{"one":2,"b":"e"}`)
 

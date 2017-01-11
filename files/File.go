@@ -59,8 +59,18 @@ func (self *File) List() ([]*File, error) {
 	}
 	return files, nil
 }
+
 func (self *File) ToString() string {
 	return self.path
+}
+
+//delete file or folder
+func (self *File) Remove() error {
+	return os.Remove(self.path)
+}
+//delete file or folder and subfolder
+func (self *File) RemoveAll() error {
+	return os.RemoveAll(self.path)
 }
 
 func (self *File) ToBytes() ([]byte, error) {

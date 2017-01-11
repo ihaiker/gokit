@@ -71,19 +71,23 @@ func (self *abLLDBIterator) Next() bool {
 	}
 	return false
 }
+
+//release the iterator
 func (self *abLLDBIterator) Release() {
 	self.it.Release()
 }
+//get the current value
 func (self *abLLDBIterator) Value() []byte {
 	return self.it.Value()
 }
+//get the current key
 func (self *abLLDBIterator) Get() string {
 	return self.get(self.it.Key())
 }
 
 
 //key/value iterator
-func NewKVIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
+func newKVIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
 	iter := &abLLDBIterator{
 		startKey:startKey, endKey:endKey,
 		limit:limit, direction:dir,
@@ -94,7 +98,7 @@ func NewKVIterator(startKey, endKey string, limit int, dir Direction, it iterato
 	return iter
 }
 //hash key iterator
-func NewHashKeyIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
+func newHashKeyIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
 	iter := &abLLDBIterator{
 		startKey:startKey, endKey:endKey,
 		limit:limit, direction:dir,
@@ -106,7 +110,7 @@ func NewHashKeyIterator(startKey, endKey string, limit int, dir Direction, it it
 }
 
 //hash label iterator
-func NewHashLabelIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
+func newHashLabelIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
 	iter := &abLLDBIterator{
 		startKey:startKey, endKey:endKey,
 		limit:limit, direction:dir,
@@ -117,7 +121,7 @@ func NewHashLabelIterator(startKey, endKey string, limit int, dir Direction, it 
 	return iter
 }
 //queue key iterator
-func NewQueueIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
+func newQueueIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
 	iter := &abLLDBIterator{
 		startKey:startKey, endKey:endKey,
 		limit:limit, direction:dir,
@@ -128,7 +132,7 @@ func NewQueueIterator(startKey, endKey string, limit int, dir Direction, it iter
 	return iter
 }
 //queue value iterator
-func NewQueueValueIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
+func newQueueValueIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
 	iter := &abLLDBIterator{
 		startKey:startKey, endKey:endKey,
 		limit:limit, direction:dir,
@@ -138,13 +142,25 @@ func NewQueueValueIterator(startKey, endKey string, limit int, dir Direction, it
 	iter.skip()
 	return iter
 }
-// set list iterator
-func NewSetIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
+// set set iterator
+func newSetIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
 	iter := &abLLDBIterator{
 		startKey:startKey, endKey:endKey,
 		limit:limit, direction:dir,
 		it:it, step:0,
 		is:IsSetSize, get:DecodeSetSize,
+	}
+	iter.skip()
+	return iter
+}
+
+// set sorted set iterator
+func newSortedSetIterator(startKey, endKey string, limit int, dir Direction, it iterator.Iterator) Iterator {
+	iter := &abLLDBIterator{
+		startKey:startKey, endKey:endKey,
+		limit:limit, direction:dir,
+		it:it, step:0,
+		is:IsSortedSetSize, get:DecodeSortedSetSize,
 	}
 	iter.skip()
 	return iter
@@ -185,4 +201,41 @@ func (self *SetIterator) Value() []byte {
 }
 func (self *SetIterator) Release() {
 	self.it.Release()
+}
+
+//-- sorted set iterator
+type SortedSetIterator struct {
+	SetIterator
+	score uint64
+	step, limit uint64
+}
+func (self *SortedSetIterator) Score() uint64{
+	return self.score
+}
+func (self *SortedSetIterator) Next() bool {
+	if self.step >= self.limit {
+		return false
+	}
+	self.step += 1
+	b := self.it.Next() && IsSortedSetScore(self.it.Key())
+	if b {
+		key, value,score := DecodeSortedSetScore(self.it.Key())
+		if self.key != key {
+			return false
+		}
+		self.value = value
+		self.score = score
+	} else {
+		_, self.value = "", nil
+	}
+	return b
+}
+
+func NewSortedSetIterator(it iterator.Iterator, key string, limit uint64) *SortedSetIterator {
+	ssi := &SortedSetIterator{}
+	ssi.it = it
+	ssi.key = key
+	ssi.limit = limit
+	ssi.step = 0
+	return ssi
 }

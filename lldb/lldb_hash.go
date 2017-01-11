@@ -66,6 +66,7 @@ func (self *LLDBEngine) HDel(key, label string) (int, error) {
 	return del, self.data.Write(batch, self.writeOptions)
 }
 
+//get the hash size
 func (self *LLDBEngine) HSize(key string) int {
 	val, err := self.data.Get(EncodeHashSize(key), self.readOptions)
 	if err != nil {
@@ -89,6 +90,7 @@ func (self *LLDBEngine) HSize(key string) int {
 	return 0
 }
 
+//list the name of `hash` data
 func (self *LLDBEngine) HList(startKey, endKey string, limit int) (Iterator, error) {
 	startRange := EncodeHashSize(startKey)
 	var endRange []byte = nil
@@ -105,9 +107,9 @@ func (self *LLDBEngine) HList(startKey, endKey string, limit int) (Iterator, err
 	if (!it.Valid()) {
 		it.Last();
 	}
-	return NewHashKeyIterator(startKey, endKey, limit, FORWARD, it), nil
+	return newHashKeyIterator(startKey, endKey, limit, FORWARD, it), nil
 }
-
+//list from left to right the name of `hash` data
 func (self *LLDBEngine) HRList(startKey, endKey string, limit int) (Iterator, error) {
 	var startRange, endRange []byte
 	startRange = EncodeHashSize(startKey)
@@ -125,9 +127,10 @@ func (self *LLDBEngine) HRList(startKey, endKey string, limit int) (Iterator, er
 	it.Last()
 	it.Seek(endRange)
 
-	return NewHashKeyIterator(startKey, endKey, limit, BACKWARD, it), nil
+	return newHashKeyIterator(startKey, endKey, limit, BACKWARD, it), nil
 }
 
+//scan the hash table data by the give key
 func (self *LLDBEngine) HScan(key string, startLabel, endLabel string, limit int) (Iterator, error) {
 	startRange := EncodeHash(key, startLabel)
 	var endRange []byte = nil
@@ -146,7 +149,7 @@ func (self *LLDBEngine) HScan(key string, startLabel, endLabel string, limit int
 	if (!it.Valid()) {
 		it.Last();
 	}
-	return NewHashLabelIterator(startLabel, endLabel, limit, FORWARD, it), nil
+	return newHashLabelIterator(startLabel, endLabel, limit, FORWARD, it), nil
 }
 
 func (self *LLDBEngine) HGetAll(key string) (Iterator, error) {
