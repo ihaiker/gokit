@@ -61,6 +61,10 @@ func _update_sset_size(self *LLDBEngine, batch *leveldb.Batch, key string, incr 
 }
 
 func (self *LLDBEngine) SAdd(key string, value []byte) (int, error) {
+	rwlock := self.setLock.Get(key)
+	rwlock.Lock()
+	defer rwlock.Unlock()
+	
 	batch := &leveldb.Batch{}
 	insert, err := _add_set(self, batch, key, value)
 	if err != nil {
@@ -75,6 +79,10 @@ func (self *LLDBEngine) SAdd(key string, value []byte) (int, error) {
 }
 
 func (self *LLDBEngine) SDel(key string, value []byte) (int, error) {
+	rwlock := self.setLock.Get(key)
+	rwlock.Lock()
+	defer rwlock.Unlock()
+	
 	batch := &leveldb.Batch{}
 	del, err := _del_set(self, batch, key, value)
 	if err != nil || del == 0 {
@@ -134,6 +142,10 @@ func (self *LLDBEngine) SRandomMember(key string) ([]byte, error) {
 }
 
 func (self *LLDBEngine) SPop(key string) ([]byte, error) {
+	rwlock := self.setLock.Get(key)
+	rwlock.Lock()
+	defer rwlock.Unlock()
+	
 	val, err := self.SRandomMember(key)
 	if err != nil {
 		return nil, err

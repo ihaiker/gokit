@@ -19,7 +19,7 @@ data:
 locks:
     keys: 4
     hash: 2
-    list: 2
+    queue: 2
     set: 2
     sortedset: 2
 
@@ -38,7 +38,7 @@ type Config struct {
     Locks   struct {
                 Keys      uint8
                 Hash      uint8
-                List      uint8
+                Queue     uint8
                 Set       uint8
                 SortedSet uint8
             }

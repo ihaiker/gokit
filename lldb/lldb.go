@@ -14,10 +14,16 @@ import (
 )
 
 type LLDBEngine struct {
-    data         *leveldb.DB
-    writeOptions *opt.WriteOptions
-    readOptions  *opt.ReadOptions
-    config       *Config
+    data          *leveldb.DB
+    writeOptions  *opt.WriteOptions
+    readOptions   *opt.ReadOptions
+    config        *Config
+    
+    keysLock      *Locks
+    hashLock      *Locks
+    setLock       *Locks
+    queueLock     *Locks
+    sortedSetLock *Locks
 }
 
 //close the leveldb connect.
@@ -58,9 +64,9 @@ func (self *LLDBEngine) toTest() string {
 
 //Use the default location initialization `leveldb` library
 func Default() (*LLDBEngine, error) {
-    cfg,err := SetConfig("")
+    cfg, err := SetConfig("")
     if err != nil {
-        return nil,err
+        return nil, err
     }
     return New(cfg)
 }
@@ -68,11 +74,11 @@ func Default() (*LLDBEngine, error) {
 //Using the location specified initialization `leveldb` library
 func NewWith(cfgPath string) (*LLDBEngine, error) {
     if !fileKit.IsExistFile(cfgPath) {
-        return nil,errors.New("the config file not found !")
+        return nil, errors.New("the config file not found !")
     }
-    cfg,err := SetConfig(cfgPath)
+    cfg, err := SetConfig(cfgPath)
     if err != nil {
-        return nil,err
+        return nil, err
     }
     return New(cfg)
 }
@@ -93,6 +99,26 @@ func New(cfg *Config) (*LLDBEngine, error) {
         return nil, err
     }
     
-    return &LLDBEngine{data:data,config:cfg}, nil
+    keys, err := NewLocks(cfg.Locks.Keys); if err != nil {
+        return nil, err
+    }
+    hash, err := NewLocks(cfg.Locks.Hash); if err != nil {
+        return nil, err
+    }
+    queue, err := NewLocks(cfg.Locks.Queue); if err != nil {
+        return nil, err
+    }
+    set, err := NewLocks(cfg.Locks.Set); if err != nil {
+        return nil, err
+    }
+    sortedSet, err := NewLocks(cfg.Locks.SortedSet); if err != nil {
+        return nil, err
+    }
+    
+    return &LLDBEngine{
+        data:data, config:cfg,
+        keysLock:keys, hashLock:hash, queueLock:queue,
+        setLock:set, sortedSetLock:sortedSet,
+    }, nil
 }
 

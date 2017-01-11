@@ -53,10 +53,16 @@ func (self *LLDBEngine) _push(dir Direction, key string, value []byte) error {
 }
 
 func (self *LLDBEngine) QPush(key string, value []byte) error {
+    rwlock := self.queueLock.Get(key)
+    rwlock.Lock()
+    defer rwlock.Unlock()
 	return self._push(FORWARD, key, value)
 }
 
 func (self *LLDBEngine) QRPush(key string, value []byte) error {
+    rwlock := self.queueLock.Get(key)
+    rwlock.Lock()
+    defer rwlock.Unlock()
 	return self._push(BACKWARD, key, value)
 }
 
@@ -92,9 +98,17 @@ func (self *LLDBEngine) _pop(key string, dir Direction) ([]byte, error) {
 }
 
 func (self *LLDBEngine) QPop(key string) ([]byte, error) {
+    rwlock := self.queueLock.Get(key)
+    rwlock.Lock()
+    defer rwlock.Unlock()
+    
 	return self._pop(key, FORWARD)
 }
 func (self *LLDBEngine) QRPop(key string) ([]byte, error) {
+    rwlock := self.queueLock.Get(key)
+    rwlock.Lock()
+    defer rwlock.Unlock()
+    
 	return self._pop(key, BACKWARD)
 }
 
@@ -185,11 +199,20 @@ func (self *LLDBEngine) _trim(key string, limit uint64, dir Direction) (int, err
 	}
 	return int(deleteNum), self.data.Write(batch, self.writeOptions)
 }
-
+//删除队列只剩下limit个
 func (self *LLDBEngine) QTrim(key string, limit int) (int, error) {
+    rwlock := self.queueLock.Get(key)
+    rwlock.Lock()
+    defer rwlock.Unlock()
+    
 	return self._trim(key, uint64(limit), FORWARD)
 }
+//删除对垒只剩下limit个
 func (self *LLDBEngine) QRTrim(key string, limit int) (int, error) {
+    rwlock := self.queueLock.Get(key)
+    rwlock.Lock()
+    defer rwlock.Unlock()
+    
 	return self._trim(key, uint64(limit), BACKWARD)
 }
 

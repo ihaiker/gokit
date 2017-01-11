@@ -211,19 +211,20 @@ func TestQueueRange(t *testing.T) {
 func TestCurrentQueue(t *testing.T) {
 	store := newDB(t)
 	defer store.Close()
+	store.FlushDB()
 
 	g := &sync.WaitGroup{}
-	for i:=0 ; i<1 ; i++ {
+	for i:=0 ; i<100 ; i++ {
 		g.Add(1)
 		go func(n int) {
-			for j:=0;j<10;j++ {
+			for j:=0;j<100;j++ {
 				store.QPush("a",[]byte(fmt.Sprintf("%02d-%02d",n,j)))
 			}
 			g.Done()
 		}(i)
 	}
 	g.Wait()
-	t.Log(store.toTest())
+	//t.Log(store.toTest())
 	t.Log(store.QSize("a"))
 	t.Log("OVER")
 }

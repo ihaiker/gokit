@@ -44,6 +44,10 @@ func (self *LLDBEngine) hdel_one(batch *leveldb.Batch, key, label string) int {
 //set key value
 //设置指定 key 的值内容.
 func (self *LLDBEngine) HSet(key, label string, value []byte) (int, error) {
+	rwlock := self.setLock.Get(key)
+	rwlock.Lock()
+	defer rwlock.Unlock()
+	
 	batch := &leveldb.Batch{}
 	insert := self.hset_one(batch, key, label, value)
 	if insert == 0 {
@@ -57,6 +61,10 @@ func (self *LLDBEngine) HGet(key, label string) ([]byte, error) {
 	return self.data.Get(EncodeHash(key, label), self.readOptions)
 }
 func (self *LLDBEngine) HDel(key, label string) (int, error) {
+	rwlock := self.setLock.Get(key)
+	rwlock.Lock()
+	defer rwlock.Unlock()
+	
 	batch := &leveldb.Batch{}
 	del := self.hdel_one(batch, key, label)
 	if del == 0 {

@@ -28,6 +28,10 @@ func (self *LLDBEngine) _zset_one(batch *leveldb.Batch, key string, value []byte
 }
 
 func (self *LLDBEngine) _incr_sorted_size(batch *leveldb.Batch, key string, incr int64) error {
+    rwlock := self.sortedSetLock.Get(key)
+    rwlock.Lock()
+    defer rwlock.Unlock()
+    
 	if size, err := self.ZSize(key); err != nil {
 		return err
 	} else {

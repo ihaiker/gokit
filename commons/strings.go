@@ -1,5 +1,6 @@
 package commonKit
 
+import "io"
 func Switch(check, other interface{}) interface{} {
 	if check == nil {
 		return other
@@ -32,5 +33,5 @@ type Iterator interface {
 
 type CloseIterator interface {
 	Iterator
-	Close() error
+	io.Closer
 }
