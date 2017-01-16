@@ -1,0 +1,24 @@
+root:
+    level: "debug"
+    appender: "console"
+    formatter: "pattern"
+#   appender: none/console/file/sock
+#   formatter: text/json/pattern
+
+logger:
+    - "info"
+    - "error"
+
+info:
+    level: "info"
+    appender: "file"
+    path: "/export/Logs/info.log.{yyyy-MM-dd}"
+    formatter: "pattern"
+    layout: "[%p] %d %f %m"
+
+error:
+    level: "error"
+    appender: "file"
+    path: "/export/Logs/error.log"
+    formatter: "pattern"
+    layout: "[%p] %d %f %m"

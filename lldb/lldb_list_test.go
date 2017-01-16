@@ -2,28 +2,22 @@ package lldb
 
 import (
 	"testing"
-	"github.com/ihaiker/gokit/commons"
 	"sync"
 	"fmt"
 )
 
 //-- set queue
 func TestIndex(t *testing.T) {
-	a := commonKit.UInt64(QUEUE_INIT_SEQ)
-	b := commonKit.UInt64(QUEUE_MAX_SEQ)
-	c := make([]byte, 16)
-	copy(c[0:8], a)
-	copy(c[8:], b)
-
-	na := commonKit.ToUInt64(a)
-	nb := commonKit.ToUInt64(b)
-	t.Log(na, QUEUE_INIT_SEQ, na == QUEUE_INIT_SEQ)
-	t.Log(nb, QUEUE_MAX_SEQ, nb == QUEUE_MAX_SEQ)
-
-	na = commonKit.ToUInt64(c[0:8])
-	nb = commonKit.ToUInt64(c[8:])
-	t.Log(na, QUEUE_INIT_SEQ, na == QUEUE_INIT_SEQ)
-	t.Log(nb, QUEUE_MAX_SEQ, nb == QUEUE_MAX_SEQ)
+	key := "test"
+	index := uint64(20)
+	bs := EncodeQueue(key,index)
+	t.Log(string(bs))
+	t.Log(bs)
+	nKey := DecodeQueue(bs)
+	nKey2 := string(QueueListKey(index))
+	t.Log(nKey)
+	t.Log(nKey2)
+	t.Log(nKey == nKey2)
 }
 
 func TestQueue(t *testing.T) {
@@ -227,4 +221,18 @@ func TestCurrentQueue(t *testing.T) {
 	//t.Log(store.toTest())
 	t.Log(store.QSize("a"))
 	t.Log("OVER")
+}
+
+
+func TestQueue2(t *testing.T) {
+	store := newDB(t)
+	defer store.Close()
+	store.FlushDB()
+
+	
+	store.QPush("a",[]byte("a-1"))
+	store.QPush("a",[]byte("a-2"))
+	store.QPush("b",[]byte("b-1"))
+	
+	t.Log(store.toTest())
 }

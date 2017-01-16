@@ -114,3 +114,64 @@ func JavaFormat(t time.Time, format string) string {
 
 	return format
 }
+//2006-01-02 15:04:05.999999999 -0700 MST
+//yyyy-MM-dd HH:mm:ss.SSS
+func GoLayout(javaPattern string) string{
+	layout := javaPattern
+	//year
+	if strings.ContainsAny(layout, "y") {
+		if strings.Count(layout, "yy") == 1 && strings.Count(layout, "y") == 2 {
+			layout = strings.Replace(layout, "yy", "06", 1)
+		} else if strings.Count(layout, "yyyy") == 1 && strings.Count(layout, "y") == 4 {
+			layout = strings.Replace(layout, "yyyy", "2006", 1)
+		} else {
+			panic("format year error! please 'yyyy' or 'yy'")
+		}
+	}
+	//month
+	if strings.ContainsAny(layout, "M") {
+		if strings.Count(layout, "MM") == 1 && strings.Count(layout, "M") == 2 {
+			layout = strings.Replace(layout, "MM", "01", 1)
+		} else {
+			panic("format month error! please 'MM'")
+		}
+	}
+	//day
+	if strings.ContainsAny(layout, "d") {
+		if strings.Count(layout, "dd") == 1 && strings.Count(layout, "d") == 2 {
+			layout = strings.Replace(layout, "dd", "02", 1)
+		} else {
+			panic("format day error! please 'dd'")
+		}
+	}
+	//hour
+	if strings.ContainsAny(layout, "H") {
+		if strings.Count(layout, "HH") == 1 && strings.Count(layout, "H") == 2 {
+			layout = strings.Replace(layout, "HH", "15", 1)
+		} else {
+			panic("format hour error! please 'HH'")
+		}
+	}
+	
+	//minute
+	if strings.ContainsAny(layout, "m") {
+		if strings.Count(layout, "mm") == 1 && strings.Count(layout, "m") == 2 {
+			layout = strings.Replace(layout, "mm", "04", 1)
+		} else {
+			panic("format minute error! please 'mm'")
+		}
+	}
+	
+	//second
+	if strings.ContainsAny(layout, "s") {
+		if strings.Count(layout, "ss") == 1 && strings.Count(layout, "s") == 2 {
+			layout = strings.Replace(layout, "ss", "05", 1)
+		} else {
+			panic("format second error! please 'ss'")
+		}
+	}
+	if strings.ContainsAny(layout, "S") {
+		layout = strings.Replace(layout, "S", "9", 10)
+	}
+	return layout
+}

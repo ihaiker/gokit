@@ -5,7 +5,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/syndtr/goleveldb/leveldb/errors"
-	"fmt"
 	"github.com/ihaiker/gokit/commons"
 )
 
@@ -234,8 +233,9 @@ func (self *LLDBEngine) QRange(key string, offset, limit uint64) (Iterator, erro
 		if end > maxIdx - 1 {
 			end = maxIdx - 1
 		}
-		startKey := fmt.Sprintf("%020d", start)
-		endKey := fmt.Sprintf("%020d", end)
+		startKey := string(QueueListKey(start))
+		endKey := string(QueueListKey(end))
+		
 		startRange := EncodeQueue(key, start)
 		//end + 1 是因为levelDB的返回是 [)，详细查阅：util.Range
 		endRange := EncodeQueue(key, end + 1)
@@ -256,8 +256,8 @@ func (self *LLDBEngine) QSlice(key string, begin, end int64) (Iterator, error) {
 		if endIdx < startIdx {
 			return nil, errors.New("the index start < end")
 		}
-		startKey := fmt.Sprintf("%020d", startIdx)
-		endKey := fmt.Sprintf("%020d", endIdx)
+		startKey := string(QueueListKey(startIdx))
+		endKey := string(QueueListKey(endIdx))
 		startRange := EncodeQueue(key, startIdx)
 		//end + 1 是因为levelDB的返回是 [)，详细查阅：util.Range
 		endRange := EncodeQueue(key, endIdx + 1)

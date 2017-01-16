@@ -16,17 +16,23 @@ func IsQueueIndex(encodeKey []byte) bool {
 	return encodeKey[0] == dt_qsize
 }
 
-//
+
 func EncodeQueue(key string, index uint64) []byte {
-	out := make([]byte,1 + 8)
+	keyBytes := []byte(key)
+	out := make([]byte, 1 + (1 + len(keyBytes)) + 8)
 	out[0] = dt_queue
-	commonKit.PutUInt64(out[1:],index)
+	out[1] = byte(len(keyBytes))
+	copy(out[2:2 + len(keyBytes)], keyBytes)
+	commonKit.PutUInt64(out[2 + len(keyBytes):], index)
 	return out
 }
 func IsQueueItem(encodeKey []byte) bool {
 	return encodeKey[0] == dt_queue
 }
 func DecodeQueue(encodeKey []byte) string {
-	return string(encodeKey[1:])
+	keyLength := int(encodeKey[1])
+	return string(encodeKey[2+keyLength:])
 }
-
+func QueueListKey(index uint64) []byte{
+	return commonKit.UInt64(index)
+}
