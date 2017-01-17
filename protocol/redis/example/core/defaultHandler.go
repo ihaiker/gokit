@@ -1,15 +1,14 @@
-package redis
+package core
 
 import (
 	"fmt"
 	"reflect"
 	"strconv"
 	"time"
+	"github.com/ihaiker/gokit/protocol/redis"
 )
 
 type (
-	HashValue   map[string][]byte
-	HashHash    map[string]HashValue
 	HashBrStack map[string]*Stack
 )
 
@@ -17,15 +16,15 @@ type Database struct {
 	children map[int]*Database
 	parent   *Database
 
-	values  HashValue
-	hvalues HashHash
+	values  redis.HashValue
+	hvalues redis.HashHash
 	brstack HashBrStack
 
 }
 
 func NewDatabase(parent *Database) *Database {
 	db := &Database{
-		values:   make(HashValue),
+		values:   make(redis.HashValue),
 		brstack:  make(HashBrStack),
 		children: map[int]*Database{},
 		parent:   parent,
@@ -61,12 +60,12 @@ func (h *DefaultHandler) Brpop(key string, keys ...string) (data [][]byte, err e
 	}
 
 	if len(keys) == 0 {
-		return nil, ErrParseTimeout
+		return nil, redis.ErrParseTimeout
 	}
 
 	timeout, err := strconv.Atoi(keys[len(keys)-1])
 	if err != nil {
-		return nil, ErrParseTimeout
+		return nil, redis.ErrParseTimeout
 	}
 	keys = keys[:len(keys)-1]
 
@@ -163,12 +162,12 @@ func (h *DefaultHandler) Blpop(key string, keys ...string) (data [][]byte, err e
 	}
 
 	if len(keys) == 0 {
-		return nil, ErrParseTimeout
+		return nil, redis.ErrParseTimeout
 	}
 
 	timeout, err := strconv.Atoi(keys[len(keys)-1])
 	if err != nil {
-		return nil, ErrParseTimeout
+		return nil, redis.ErrParseTimeout
 	}
 	keys = keys[:len(keys)-1]
 
@@ -232,7 +231,7 @@ func (h *DefaultHandler) Hset(key, subkey string, value []byte) (int, error) {
 		h.Database = NewDatabase(nil)
 	}
 	if _, exists := h.hvalues[key]; !exists {
-		h.hvalues[key] = make(HashValue)
+		h.hvalues[key] = make(redis.HashValue)
 		ret = 1
 	}
 
@@ -245,7 +244,7 @@ func (h *DefaultHandler) Hset(key, subkey string, value []byte) (int, error) {
 	return ret, nil
 }
 
-func (h *DefaultHandler) Hgetall(key string) (HashValue, error) {
+func (h *DefaultHandler) Hgetall(key string) (redis.HashValue, error) {
 	if h.Database == nil || h.hvalues == nil {
 		return nil, nil
 	}
@@ -286,8 +285,8 @@ func (h *DefaultHandler) Del(key string, keys ...string) (int, error) {
 	return count, nil
 }
 
-func (h *DefaultHandler) Ping() (*StatusReply, error) {
-	return &StatusReply{code: "PONG"}, nil
+func (h *DefaultHandler) Ping() (*redis.StatusReply, error) {
+	return redis.PingReply, nil
 }
 
 func (h *DefaultHandler) Select(key string) error {
@@ -308,8 +307,8 @@ func (h *DefaultHandler) Select(key string) error {
 	return nil
 }
 
-func (h *DefaultHandler) Monitor() (*MonitorReply, error) {
-	return &MonitorReply{}, nil
+func (h *DefaultHandler) Monitor() (*redis.MonitorReply, error) {
+	return &redis.MonitorReply{}, nil
 }
 
 func NewDefaultHandler() *DefaultHandler {

@@ -6,6 +6,7 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+	"github.com/ihaiker/gokit/commons/logs"
 )
 
 type ReplyWriter io.WriterTo
@@ -18,6 +19,15 @@ func (r *StatusReply) WriteTo(w io.Writer) (int64, error) {
 	n, err := w.Write([]byte("+" + r.code + "\r\n"))
 	return int64(n), err
 }
+
+func NewStatusReply(code string) *StatusReply{
+	return &StatusReply{code:code}
+}
+
+var (
+	OkReply = NewStatusReply("OK")
+	PingReply = NewStatusReply("PING")
+)
 
 type IntegerReply struct {
 	number int
@@ -77,7 +87,7 @@ func writeBytes(value interface{}, w io.Writer) (int64, error) {
 		return int64(wrote), err
 	}
 
-	Debugf("Invalid type sent to writeBytes: %v", reflect.TypeOf(value).Name())
+	logs.Debugf("Invalid type sent to writeBytes: %v", reflect.TypeOf(value).Name())
 	return 0, errors.New("Invalid type sent to writeBytes")
 }
 

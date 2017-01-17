@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"github.com/ihaiker/gokit/commons/logs"
 )
 
 func parseRequest(conn io.ReadCloser) (*Request, error) {
@@ -100,7 +101,7 @@ func readArgument(r *bufio.Reader) ([]byte, error) {
 }
 
 func malformed(expected string, got string) error {
-	Debugf("Mailformed request:'%s does not match %s\\r\\n'", got, expected)
+	logs.Debugf("Mailformed request:'%s does not match %s\\r\\n'", got, expected)
 	return fmt.Errorf("Mailformed request:'%s does not match %s\\r\\n'", got, expected)
 }
 

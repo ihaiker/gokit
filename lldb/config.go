@@ -9,6 +9,8 @@ import (
 	"github.com/ihaiker/gokit/files"
 	"github.com/ihaiker/gokit/config/yaml"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/ihaiker/gokit/commons/logs"
+	"github.com/ihaiker/gokit/commons"
 )
 
 const DEFAULT_CONFIG = `
@@ -84,6 +86,14 @@ func (self *Config) GetOptions() *opt.Options {
 	}
 }
 
+func (self *Config) Clone() (*Config,error) {
+	newConfig := &Config{}
+	if err := commonKit.Copy(newConfig,self); err != nil {
+		return nil,err
+	}
+	return newConfig,nil;
+}
+
 //read the config file
 //参数 file 可以为空，也可以是一个未找到的文件
 func SetConfig(file string) (*Config, error) {
@@ -93,6 +103,7 @@ func SetConfig(file string) (*Config, error) {
 	}
 	
 	if fileKit.IsExistFile(file) {
+		logs.Info("load config file ", file)
 		err = configTools.Load(fileKit.New(file))
 		if err != nil {
 			return nil, err

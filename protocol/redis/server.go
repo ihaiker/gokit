@@ -7,18 +7,18 @@ package redis
 import (
 	"fmt"
 	"net"
-	"reflect"
+	"github.com/ihaiker/gokit/commons/logs"
 )
 
 type Server struct {
 	Proto        string
-	Addr         string // TCP address to listen on, ":6389" if empty
+	Address      string // TCP address to listen on, ":6389" if empty
 	MonitorChans []chan string
 	methods      map[string]HandlerFn
 }
 
 func (srv *Server) ListenAndServe() error {
-	addr := srv.Addr
+	addr := srv.Address
 	if srv.Proto == "" {
 		srv.Proto = "tcp"
 	}
@@ -27,6 +27,8 @@ func (srv *Server) ListenAndServe() error {
 	} else if addr == "" {
 		addr = ":6379"
 	}
+	logs.Infof("the server run at %s %s", srv.Proto, addr)
+	
 	l, e := net.Listen(srv.Proto, addr)
 	if e != nil {
 		return e
@@ -53,32 +55,34 @@ func (srv *Server) serve(l net.Listener) error {
 // It reads commands using the redis protocol, passes them to `handler`,
 // and returns the result.
 func (srv *Server) serveClient(conn net.Conn) (err error) {
+	var clientAddress string
+	
 	defer func() {
 		if err != nil {
 			fmt.Fprintf(conn, "-%s\n", err)
 		}
+		logs.Debug("the client ",clientAddress, " disconnect.")
 		conn.Close()
 	}()
-
-	var clientAddr string
-
+	
 	switch co := conn.(type) {
 	case *net.UnixConn:
 		f, err := conn.(*net.UnixConn).File()
 		if err != nil {
 			return err
 		}
-		clientAddr = f.Name()
+		clientAddress = f.Name()
 	default:
-		clientAddr = co.RemoteAddr().String()
+		clientAddress = co.RemoteAddr().String()
 	}
-
+	logs.Debug("the client ", clientAddress," connect.")
+	
 	for {
 		request, err := parseRequest(conn)
 		if err != nil {
 			return err
 		}
-		request.Host = clientAddr
+		request.Host = clientAddress
 		reply, err := srv.Apply(request)
 		if err != nil {
 			return err
@@ -90,35 +94,12 @@ func (srv *Server) serveClient(conn net.Conn) (err error) {
 	return nil
 }
 
-func NewServer(c *Config) (*Server, error) {
+func NewServer() *Server {
 	srv := &Server{
-		Proto:        c.proto,
+		Proto:        "tcp",
+		Address:         ":6379",
 		MonitorChans: []chan string{},
 		methods:      make(map[string]HandlerFn),
 	}
-
-	if srv.Proto == "unix" {
-		srv.Addr = c.host
-	} else {
-		srv.Addr = fmt.Sprintf("%s:%d", c.host, c.port)
-	}
-
-	if c.handler == nil {
-		c.handler = NewDefaultHandler()
-	}
-
-	rh := reflect.TypeOf(c.handler)
-	for i := 0; i < rh.NumMethod(); i++ {
-		method := rh.Method(i)
-		if method.Name[0] > 'a' && method.Name[0] < 'z' {
-			continue
-		}
-		Debugf("registier: %s.%s ", rh.String(), method.Name)
-		handlerFn, err := srv.createHandlerFn(c.handler, &method.Func)
-		if err != nil {
-			return nil, err
-		}
-		srv.Register(method.Name, handlerFn)
-	}
-	return srv, nil
+	return srv
 }

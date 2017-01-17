@@ -6,9 +6,15 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+	"github.com/ihaiker/gokit/commons/logs"
 )
 
-type CheckerFn func(request *Request) (reflect.Value, ReplyWriter)
+
+type (
+	HashValue   map[string][]byte
+	HashHash    map[string]HashValue
+	CheckerFn func(request *Request) (reflect.Value, ReplyWriter)
+)
 
 // type AutoHandler interface {
 // 	GET(key string) ([]byte, error)
@@ -55,7 +61,7 @@ func (srv *Server) handlerFn(autoHandler interface{}, f *reflect.Value, checkers
 			}
 			input = append(input, value)
 		}
-		 
+		
 		//if there is no monitor
 		if len(srv.MonitorChans) > 0 {
 			var monitorString string
@@ -77,9 +83,9 @@ func (srv *Server) handlerFn(autoHandler interface{}, f *reflect.Value, checkers
 				default:
 				}
 			}
-			Debugf("%s (connected monitors: %d)\n", monitorString, len(srv.MonitorChans))
+			logs.Debugf("%s (connected monitors: %d)\n", monitorString, len(srv.MonitorChans))
 		}
-
+		
 		var result []reflect.Value
 
 		// If we don't have any input, it means we are dealing with a function.
@@ -109,7 +115,7 @@ func (srv *Server) handlerFn(autoHandler interface{}, f *reflect.Value, checkers
 			ret = result[0].Interface()
 			return srv.createReply(request, ret)
 		}
-		return &StatusReply{code: "OK"}, nil
+		return OkReply, nil
 	}, nil
 }
 
@@ -122,7 +128,6 @@ func hashValueReply(v HashValue) (*MultiBulkReply, error) {
 }
 
 func (srv *Server) createReply(r *Request, val interface{}) (ReplyWriter, error) {
-	Debugf("CREATE REPLY: %T", val)
 	switch v := val.(type) {
 	case []interface{}:
 		return &MultiBulkReply{values: v}, nil

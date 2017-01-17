@@ -8,9 +8,9 @@ import (
     "github.com/ihaiker/gokit/files"
     "errors"
     "fmt"
-    "log"
     "github.com/syndtr/goleveldb/leveldb/util"
     "bytes"
+    "github.com/ihaiker/gokit/commons/logs"
 )
 
 type LLDBEngine struct {
@@ -85,7 +85,7 @@ func NewWith(cfgPath string) (*LLDBEngine, error) {
 
 func New(cfg *Config) (*LLDBEngine, error) {
     path := cfg.GetDataPath()
-    log.Printf("init lldb datapath: %s", path)
+    logs.Debugf("init lldb datapath: %s", path)
     
     if !fileKit.Exist(path) {
         if err := os.MkdirAll(path, os.ModeDir); err != nil {

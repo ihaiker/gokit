@@ -3,6 +3,7 @@ package redis
 import (
 	"reflect"
 	"strings"
+	"github.com/ihaiker/gokit/commons/logs"
 )
 
 type HandlerFn func(r *Request) (ReplyWriter, error)
@@ -22,14 +23,13 @@ func (srv *Server) Register(name string, fn HandlerFn) {
 		srv.methods = make(map[string]HandlerFn)
 	}
 	if fn != nil {
-		Debugf("REGISTER: %s", strings.ToLower(name))
 		srv.methods[strings.ToLower(name)] = fn
 	}
 }
 
 func (srv *Server) Apply(r *Request) (ReplyWriter, error) {
 	if srv == nil || srv.methods == nil {
-		Debugf("The method map is uninitialized")
+		logs.Debugf("The method map is uninitialized")
 		return ErrMethodNotSupported, nil
 	}
 	fn, exists := srv.methods[strings.ToLower(r.Name)]
@@ -45,4 +45,21 @@ func (srv *Server) ApplyString(r *Request) (string, error) {
 		return "", err
 	}
 	return ReplyToString(reply)
+}
+
+func (srv *Server) RegisterHandler(handler interface{}) error {
+	rh := reflect.TypeOf(handler)
+	for i := 0; i < rh.NumMethod(); i++ {
+		method := rh.Method(i)
+		if method.Name[0] > 'a' && method.Name[0] < 'z' {
+			continue
+		}
+		handlerFn, err := srv.createHandlerFn(handler, &method.Func)
+		if err != nil {
+			return err
+		}
+		logs.Infof("registier: %s.%s ", rh.String(), method.Name)
+		srv.Register(method.Name, handlerFn)
+	}
+	return nil
 }

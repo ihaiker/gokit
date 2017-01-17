@@ -159,3 +159,7 @@ func SetConfigWithContent(content string) (err error) {
 	}
 	return
 }
+
+func init() {
+	SetDefault()
+}

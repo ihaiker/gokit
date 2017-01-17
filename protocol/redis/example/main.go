@@ -6,24 +6,8 @@ package main
 import (
 	"fmt"
 	"github.com/ihaiker/gokit/protocol/redis"
+	"github.com/ihaiker/gokit/protocol/redis/example/core"
 )
-
-type MyHandler struct {
-	redis.DefaultHandler
-}
-
-//func (h *MyHandler) Set(key string,value []byte) (int,error) {
-//    err := h.DefaultHandler.Set(key,value)
-//    return 1,err
-//}
-
-func (h *MyHandler) Get(key string) ([]byte, error) {
-	ret, err := h.DefaultHandler.Get(key)
-	if ret == nil {
-		return nil, err
-	}
-	return []byte("BEAM/" + string(ret)), err
-}
 
 func main() {
 	defer func() {
@@ -31,10 +15,8 @@ func main() {
 			fmt.Printf("Panic: %v\n", msg)
 		}
 	}()
-	srv, err := redis.NewServer(redis.DefaultConfig().Handler(&MyHandler{}))
-	if err != nil {
-		panic(err)
-	}
+	srv := redis.NewServer()
+	srv.RegisterHandler(&core.DefaultHandler{})
 	if err := srv.ListenAndServe(); err != nil {
 		panic(err)
 	}
