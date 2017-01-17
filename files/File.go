@@ -60,8 +60,13 @@ func (self *File) List() ([]*File, error) {
 	return files, nil
 }
 
-func (self *File) ToString() string {
+func (self *File) GetPath() string {
 	return self.path
+}
+
+func (self *File) ToString() (string,error) {
+	bs,err := self.ToBytes()
+	return string(bs),err
 }
 
 //delete file or folder

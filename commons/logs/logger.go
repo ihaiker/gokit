@@ -46,14 +46,14 @@ func _appender(logger string, cfg *config.Config) io.Writer {
 			if err != nil {
 				panic(err)
 			}
-			match,_ := regexp.Match("\\{[yMdHmsS-]*\\}",[]byte(path))
+			match, _ := regexp.Match("\\{[yMdHmsS-]*\\}", []byte(path))
 			if match {
 				if out, err := NewDailyRollingFileOut(path); err != nil {
 					panic(err)
 				} else {
 					return out
 				}
-			}else{
+			} else {
 				if out, err := NewFileOut(path); err != nil {
 					panic(err)
 				} else {
@@ -85,23 +85,39 @@ func _formatter(logger string, cfg *config.Config) logrus.Formatter {
 	}
 }
 
-func addHook(logger string, cfg *config.Config) logrus.Hook {
-	level := _level(logger,cfg)
+func parseHook(logger string, cfg *config.Config) logrus.Hook {
+	level := _level(logger, cfg)
 	levels := []logrus.Level{}
-	for _,l := range logrus.AllLevels {
-		if l >= level {
-			levels = append(levels,l)
+	for _, l := range logrus.AllLevels {
+		if l <= level {
+			levels = append(levels, l)
 		}
 	}
 	
 	hook := &fsHook{
-		out:_appender(logger,cfg), levels:levels,
-		formatter:_formatter(logger,cfg),
+		out:_appender(logger, cfg), levels:levels,
+		formatter:_formatter(logger, cfg),
 	}
 	return hook
 }
 
-func New(cfgFile string) (logger *logrus.Logger, err error) {
+func SetDefault() error {
+	return SetConfigWithContent("")
+}
+
+func SetConfig(configFile string) error {
+	f := fileKit.New(configFile)
+	if !f.Exist() {
+		return errors.New("the config file not found! " + configFile)
+	}
+	content, err := f.ToString()
+	if err != nil {
+		return err
+	}
+	return SetConfigWithContent(content)
+}
+
+func SetConfigWithContent(content string) (err error) {
 	defer func() {
 		if err == nil {
 			if e := recover(); e != nil {
@@ -109,35 +125,36 @@ func New(cfgFile string) (logger *logrus.Logger, err error) {
 			}
 		}
 	}()
-	
-	configFile := fileKit.New(cfgFile)
-	if !configFile.Exist() {
-		return nil, errors.New("the config file not found! " + cfgFile)
-	}
 	//init config
-	cfg, err := yaml.Config(default_config)
+	var cfg *config.Config
+	cfg, err = yaml.Config(default_config)
 	if err != nil {
 		err = errors.New("read default config error: " + err.Error())
 		return
 	}
-	err = cfg.Load(configFile)
-	if err != nil {
-		err = errors.New("read config file error: " + err.Error())
-		return
+	if content != "" {
+		err = cfg.Load(content)
+		if err != nil {
+			err = errors.New("read config file error: " + err.Error())
+			return
+		}
 	}
 	
-	logger = logrus.New()
-	logger.Level = _level("root", cfg)
-	logger.Out = _appender("root", cfg)
-	logger.Formatter = _formatter("root", cfg)
+	logrus.SetLevel(_level("root", cfg))
+	logrus.SetOutput(_appender("root", cfg))
+	logrus.SetFormatter(_formatter("root", cfg))
 	
+	//清楚之前hook
+	for level,_ := range logrus.StandardLogger().Hooks {
+		delete(logrus.StandardLogger().Hooks,level)
+	}
 	if loggers, err := cfg.GetSlice("logger"); err != nil {
 		if err != config.NOT_FOUND {
-			return nil,err
+			return err
 		}
 	} else {
-		for _,log := range loggers{
-			logger.Hooks.Add(addHook(log.(string),cfg))
+		for _, log := range loggers {
+			logrus.AddHook(parseHook(log.(string), cfg))
 		}
 	}
 	return
