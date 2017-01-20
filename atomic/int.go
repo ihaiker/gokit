@@ -65,11 +65,25 @@ func (self *AtomicUInt32) GetAndIncrement() (uint32) {
 }
 
 func (self *AtomicUInt32) DecrementAndGet() (uint32) {
-	return self.AddAndGet(-1)
+	var old uint32
+	for ; ; {
+		old = atomic.LoadUint32(&self.value)
+		if atomic.CompareAndSwapUint32(&self.value, old, old - 1 ) {
+			break
+		}
+	}
+	return old - 1
 }
 
 func (self *AtomicUInt32) GetAndDecrement() (uint32) {
-	return self.GetAndAdd(-1)
+	var old uint32
+	for ; ; {
+		old = atomic.LoadUint32(&self.value)
+		if atomic.CompareAndSwapUint32(&self.value, old, old - 1 ) {
+			break
+		}
+	}
+	return old
 }
 
 func (self *AtomicUInt32) AddAndGet(i uint32) (uint32) {
@@ -77,7 +91,7 @@ func (self *AtomicUInt32) AddAndGet(i uint32) (uint32) {
 }
 
 func (self *AtomicUInt32) GetAndAdd(i uint32) (uint32) {
-	var ret int32
+	var ret uint32
 	for ; ; {
 		ret = atomic.LoadUint32(&self.value)
 		if atomic.CompareAndSwapUint32(&self.value, ret, ret + i) {
