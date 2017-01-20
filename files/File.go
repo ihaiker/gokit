@@ -60,13 +60,19 @@ func (self *File) List() ([]*File, error) {
 	return files, nil
 }
 
+func (self *File) Rename(newName string) error {
+	dir, _ := filepath.Split(self.path)
+	newPath := dir + "/" + newName
+	return os.Rename(self.path, newPath)
+}
+
 func (self *File) GetPath() string {
 	return self.path
 }
 
-func (self *File) ToString() (string,error) {
-	bs,err := self.ToBytes()
-	return string(bs),err
+func (self *File) ToString() (string, error) {
+	bs, err := self.ToBytes()
+	return string(bs), err
 }
 
 //delete file or folder
