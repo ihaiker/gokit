@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+var Separator = string([]byte{byte(filepath.Separator)})
+var ListSeparator = string([]byte{byte(filepath.ListSeparator)})
+
 // file is exit
 func Exist(filename string) bool {
 	_, err := os.Stat(filename)
@@ -29,7 +32,7 @@ func IsDir(filename string) bool {
 
 func IsExistFile(filename string) bool {
 	fs, err := os.Stat(filename)
-
+	
 	if err == nil || os.IsExist(err) {
 		return ! fs.IsDir()
 	} else {
