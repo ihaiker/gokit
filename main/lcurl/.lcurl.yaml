@@ -1,0 +1,7 @@
+host: 192.168.1.236:22
+user: root
+password: 1qaz2wsx
+
+#Privatekey
+#DialTimeoutSecond
+#MaxDataThroughput
