@@ -67,6 +67,13 @@ func Config(items... interface{}) (*config.Config, error) {
 	return cfg, err
 }
 
+func ConfigP(items... interface{}) *config.Config {
+	cfg,err := Config(items...)
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
 
 func Merger() *config.Merger {
 	return config.NewMerger(mergerMethod)

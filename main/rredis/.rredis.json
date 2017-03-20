@@ -1,0 +1,31 @@
+{
+    "ssh": {
+        "host": "192.168.1.236:22",
+        "user": "root",
+        "password": "1qaz2wsx",
+        "Privatekey": "",
+        "DialTimeoutSecond": 70000,
+        "MaxDataThroughput": 10
+    },
+    "remote": [
+        {
+            "name":"d6391",
+            "host":"192.168.1.236",
+            "port": 6391,
+            "password":"123456"
+        },
+        {
+            "name":"d6392",
+            "host":"192.168.1.236",
+            "port": 6392,
+            "password":"123456"
+        },
+        {
+            "name":"d6393",
+            "host":"192.168.1.236",
+            "port": 6393,
+            "password":"123456"
+        }
+    ],
+    "history":"/tmp/.rredis_history"
+}

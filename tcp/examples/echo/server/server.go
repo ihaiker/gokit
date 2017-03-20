@@ -13,6 +13,7 @@ import (
 	tcpkit "github.com/ihaiker/gokit/tcp"
 	"github.com/ihaiker/gokit/tcp/examples/echo"
 	ktime "github.com/ihaiker/gokit/time"
+	"github.com/ihaiker/gokit/commons/time"
 )
 
 
@@ -47,16 +48,16 @@ type EchoHeartbeatHandler struct{}
 func (self *EchoHeartbeatHandler) OnIdle(idleState tcpkit.IdleState, conn *tcpkit.Conn) {
 	switch idleState {
 	case tcpkit.READ_IDLE_STATE:
-		t := ktime.JavaFormat(time.Now(), "yyyy/MM/dd HH:mm:ss")
+		t := timeKit.JavaFormat(time.Now(), "yyyy/MM/dd HH:mm:ss")
 		fmt.Println("read idle status", t)
 		p := echo.NewEchoPacket([]byte(t))
 		conn.Write(p, time.Second)
 
 	case tcpkit.WRITER_IDLE_STATE:
-		fmt.Println("write idle status", ktime.JavaFormat(time.Now(), "yyyy/MM/dd HH:mm:ss"))
+		fmt.Println("write idle status", timeKit.JavaFormat(time.Now(), "yyyy/MM/dd HH:mm:ss"))
 
 	case tcpkit.ALL_IDLE_STATE:
-		fmt.Println("all idle status", ktime.JavaFormat(time.Now(), "yyyy/MM/dd HH:mm:ss"))
+		fmt.Println("all idle status", timeKit.JavaFormat(time.Now(), "yyyy/MM/dd HH:mm:ss"))
 	}
 }
 
