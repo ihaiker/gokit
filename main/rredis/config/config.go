@@ -33,12 +33,12 @@ type Config struct {
 
 func ReadConfig(args []string) *Config {
 	cfgFile := ""
-	if len(args) == 2 {
-		cfgFile = args[1]
+	if len(args) == 1 {
+		cfgFile = args[0]
 	}
 	if cfgFile == "" {
 		cfgFile1 := os.Getenv("HOME") + fileKit.Separator + ".rredis.json"
-		cfgFile2 := filepath.Dir(args[0]) + fileKit.Separator + ".rredis.json"
+		cfgFile2 := filepath.Dir(os.Args[0]) + fileKit.Separator + ".rredis.json"
 		if !fileKit.IsExistFile(cfgFile1) && !fileKit.IsExistFile(cfgFile2) {
 			fmt.Println("the config file not found ! \nat " + cfgFile1 + "\nat " + cfgFile2)
 			os.Exit(1)

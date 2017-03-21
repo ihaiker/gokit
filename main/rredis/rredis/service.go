@@ -2,7 +2,6 @@ package rredis
 
 import (
 	"strings"
-	"os"
 	"net"
 	"fmt"
 	"strconv"
@@ -120,8 +119,46 @@ func (self *Service) Execute(cmd string) (err error) {
 	if err = resp.Err; err != nil {
 		return
 	} else {
-		resp.WriteTo(os.Stdout)
+		self.output(resp)
 		return
+	}
+}
+
+func (self *Service) output(resp *redis.Resp) {
+	fmt.Print("OK ")
+
+	if resp.IsType(redis.Nil) {
+		fmt.Println("")
+	} else
+
+	if resp.IsType(redis.Err) {
+		fmt.Println(resp.Err)
+	} else if resp.IsType(redis.Int) {
+		i, _ := resp.Int()
+		fmt.Println(i)
+	} else if
+	resp.IsType(redis.Str) {
+		s, _ := resp.Str()
+		fmt.Println(s)
+	} else if
+	resp.IsType(redis.Array) {
+		fmt.Println("")
+		ary, _ := resp.List()
+		for idx, item := range ary {
+			fmt.Println(strconv.Itoa(idx) + ":" ,item)
+		}
+	} else if
+	resp.IsType(redis.BulkStr) {
+		fmt.Println("")
+		mp, _ := resp.Map()
+		k := 0
+		for _, v := range mp {
+			if k % 2 == 0 {
+				fmt.Println(v,"=")
+			}else{
+				fmt.Println(v)
+			}
+		}
 	}
 }
 
