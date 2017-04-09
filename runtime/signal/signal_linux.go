@@ -1,4 +1,4 @@
-package signalkit
+package signalKit
 
 import (
 	log "code.google.com/p/log4go"

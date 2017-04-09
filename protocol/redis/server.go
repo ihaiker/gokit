@@ -15,6 +15,7 @@ type Server struct {
 	Address      string // TCP address to listen on, ":6389" if empty
 	MonitorChans []chan string
 	methods      map[string]HandlerFn
+	listenr		net.Listener
 }
 
 func (srv *Server) ListenAndServe() error {
@@ -24,7 +25,7 @@ func (srv *Server) ListenAndServe() error {
 	}
 	if srv.Proto == "unix" && addr == "" {
 		addr = "/tmp/redis.sock"
-	} else if addr == "" {
+	} else if srv.Proto == "tcp" && addr == "" {
 		addr = ":6379"
 	}
 	logs.Infof("the server run at %s %s", srv.Proto, addr)
@@ -33,7 +34,8 @@ func (srv *Server) ListenAndServe() error {
 	if e != nil {
 		return e
 	}
-	return srv.serve(l)
+	srv.listenr = l
+	return srv.serve(srv.listenr)
 }
 
 // Serve accepts incoming connections on the Listener l, creating a
@@ -92,6 +94,10 @@ func (srv *Server) serveClient(conn net.Conn) (err error) {
 		}
 	}
 	return nil
+}
+
+func (srv *Server) Stop() error {
+	return srv.listenr.Close()
 }
 
 func NewServer() *Server {

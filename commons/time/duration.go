@@ -2,15 +2,15 @@ package timeKit
 
 import (
 	"time"
-	"fmt"
 )
 
 const Day = time.Hour * 24
 
 func Duration(d time.Duration, num int) time.Duration {
-	bb := d.Nanoseconds() * int64(num)
+	/*bb := d.Nanoseconds() * int64(num)
 	duration, _ := time.ParseDuration(fmt.Sprintf("%dns", bb))
-	return duration
+	return duration*/
+	return time.Duration(num) * d
 }
 
 func Days(num int) time.Duration {
