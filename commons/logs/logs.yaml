@@ -1,24 +1,20 @@
 root:
     level: "debug"
     appender: "console"
-    formatter: "pattern"
-#   appender: none/console/file/sock
-#   formatter: text/json/pattern
 
 logger:
     - "info"
     - "error"
+    - "console"
+
+console:
+    level: "debug"
+    appender: "console"
 
 info:
     level: "info"
-    appender: "file"
-    path: "/export/Logs/info.log.{yyyy-MM-dd}"
-    formatter: "pattern"
-    layout: "[%p] %d %f %m"
+    appender: "sock:/192.168.1.236:55"
 
 error:
     level: "error"
-    appender: "file"
-    path: "/export/Logs/error.log"
-    formatter: "pattern"
-    layout: "[%p] %d %f %m"
+    appender: "file:/tmp/error.log"

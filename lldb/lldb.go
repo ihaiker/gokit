@@ -2,7 +2,6 @@
 package lldb
 
 import (
-    "os"
     "github.com/syndtr/goleveldb/leveldb"
     "github.com/syndtr/goleveldb/leveldb/opt"
     "github.com/ihaiker/gokit/files"
@@ -88,7 +87,7 @@ func New(cfg *Config) (*LLDBEngine, error) {
     logs.Debugf("init lldb datapath: %s", path)
     
     if !fileKit.Exist(path) {
-        if err := os.MkdirAll(path, os.ModeDir); err != nil {
+        if err := fileKit.New(path).Mkdir(); err != nil {
             return nil, err
         }
     } else if !fileKit.IsDir(path) {

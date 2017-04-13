@@ -2,21 +2,21 @@ package logs
 
 import (
 	"github.com/bluele/gcache"
-	"path/filepath"
+	"github.com/ihaiker/gokit/commons/time"
 	"github.com/ihaiker/gokit/files"
+	"path/filepath"
 	"os"
 	"time"
-	"github.com/syndtr/goleveldb/leveldb/errors"
+	"errors"
 	"io"
-	"github.com/ihaiker/gokit/commons/time"
 	"strings"
 	"regexp"
 )
 
+//每日回滚日志
 type DailyRollingFile struct {
-	cache   gcache.Cache
-	pattern string
-	layout  string
+	cache  gcache.Cache
+	layout string
 }
 
 func (self *DailyRollingFile) Write(p []byte) (n int, err error) {
@@ -29,6 +29,7 @@ func (self *DailyRollingFile) Write(p []byte) (n int, err error) {
 	}
 }
 
+//创建每日回滚日志的文件夹
 func _create_file_dir(logDir string) error {
 	if fileKit.NotExist(logDir) {
 		if err := os.MkdirAll(logDir, os.ModeDir); err != nil {
@@ -38,29 +39,28 @@ func _create_file_dir(logDir string) error {
 	return nil
 }
 
-func NewDailyRollingFileOut(dailyRollingFileName string) (io.Writer, error) {
-	logDir := filepath.Dir(dailyRollingFileName)
+func NewDailyRollingFileOut(fileName string) (io.Writer, error) {
+	logDir := filepath.Dir(fileName)
 	if err := _create_file_dir(logDir); err != nil {
 		return nil, err
 	}
 	reg, _ := regexp.Compile("\\{[yMdHmsS-]*\\}")
-	layout := string(reg.Find([]byte(dailyRollingFileName)))
-	layout = layout[1:len(layout)-1]
-	
-	cb := gcache.New(10).LRU().Expiration(time.Hour * 24)
+	layout := string(reg.Find([]byte(fileName)))
+	layout = layout[1:len(layout) - 1]
+
+	cb := gcache.New(10).LRU().Expiration(time.Hour)
 	cb.LoaderFunc(func(key interface{}) (interface{}, error) {
 		return os.OpenFile(
-			strings.Replace(dailyRollingFileName, "{" + layout + "}", key.(string), 1),
+			strings.Replace(fileName, "{" + layout + "}", key.(string), 1),
 			(os.O_APPEND | os.O_RDWR | os.O_CREATE), os.ModePerm,
 		)
 	}).EvictedFunc(func(key, value interface{}) {
 		fd := value.(*os.File)
 		fd.Close()
 	})
-	
+
 	return &DailyRollingFile{
 		cache:cb.Build(),
-		pattern:layout,
 		layout:timeKit.GoLayout(layout),
 	}, nil
 }
