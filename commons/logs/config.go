@@ -111,8 +111,8 @@ func SetConfigWithContent(content string) (err error) {
         //root is default
         appender := _appender("root", cfg)
         log.SetOutput(appender)
-        log.SetPrefix("[logs] ")
-        log.SetFlags(LOG_FLAG)
+        log.SetPrefix("[R] ")
+        log.SetFlags(_LOG_FLAG)
     }
 
     config_logger := func(loggerName string) {
@@ -120,17 +120,17 @@ func SetConfigWithContent(content string) (err error) {
         level := _level(loggerName, cfg)
         appender := _appender(loggerName, cfg)
         switch level {
-        case DEBUG:
-            logGroup.debug_ = log.New(appender, "[debug] ", LOG_FLAG)
+        case _DEBUG:
+            logGroup.debug_ = log.New(appender, "[D] ", _LOG_FLAG)
             fallthrough
-        case INFO:
-            logGroup.info_ = log.New(appender, "[info] ", LOG_FLAG)
+        case _INFO:
+            logGroup.info_ = log.New(appender, "[I] ", _LOG_FLAG)
             fallthrough
-        case WARN:
-            logGroup.warn_ = log.New(appender, "[warn] ", LOG_FLAG)
+        case _WARN:
+            logGroup.warn_ = log.New(appender, "[W] ", _LOG_FLAG)
             fallthrough
-        case ERROR:
-            logGroup.error_ = log.New(appender, "[error] ", LOG_FLAG)
+        case _ERROR:
+            logGroup.error_ = log.New(appender, "[E] ", _LOG_FLAG)
         }
         _loggers[loggerName] = logGroup
     }
@@ -145,13 +145,15 @@ func SetConfigWithContent(content string) (err error) {
 }
 
 func init() {
-    f := fileKit.New("./logs.yaml")
+    f := fileKit.New("./conf/logs.yaml")
     if f.Exist() {
+        log.Println("use log config file ",f.GetPath())
         content, _ := f.ToString()
         if err := SetConfigWithContent(content); err != nil {
             log.Panic("set config :", err.Error())
         }
     } else {
+        log.Println("the config file ",f.GetPath()," not found !")
         if err := SetConfigWithContent(""); err != nil {
             log.Panic("set config :", err.Error())
         }

@@ -2,33 +2,33 @@ package logs
 
 import "fmt"
 
-const DEP int = 3
+const _DEP int = 3
 
 func Debug(args ...interface{}) {
-    _log("root", DEBUG, args...)
+    _log("root", _DEBUG, args...)
 }
 func Info(args ...interface{}) {
-    _log("root", INFO, args...)
+    _log("root", _INFO, args...)
 }
 func Warn(args ...interface{}) {
-    _log("root", WARN, args...)
+    _log("root", _WARN, args...)
 }
 func Error(args ...interface{}) {
-    _log("root", ERROR, args...)
+    _log("root", _ERROR, args...)
 }
 
 func Debugf(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _logf("root", _DEBUG, format, args...)
 }
 
 func Infof(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _logf("root", _DEBUG, format, args...)
 }
 func Warnf(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _logf("root", _DEBUG, format, args...)
 }
 func Errorf(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _logf("root", _DEBUG, format, args...)
 }
 
 func _logf(loggerName string, level Level, format string, args ...interface{}) {
@@ -37,21 +37,21 @@ func _logf(loggerName string, level Level, format string, args ...interface{}) {
         l = _loggers["root"]
     }
     switch level {
-    case DEBUG:
+    case _DEBUG:
         if l.debug_ != nil {
-            l.debug_.Output(DEP, fmt.Sprintf(format, args))
+            l.debug_.Output(_DEP, fmt.Sprintf(format, args))
         }
-    case INFO:
+    case _INFO:
         if l.info_ != nil {
-            l.info_.Output(DEP, fmt.Sprintf(format, args))
+            l.info_.Output(_DEP, fmt.Sprintf(format, args))
         }
-    case WARN:
+    case _WARN:
         if l.warn_ != nil {
-            l.warn_.Output(DEP, fmt.Sprintf(format, args))
+            l.warn_.Output(_DEP, fmt.Sprintf(format, args))
         }
-    case ERROR:
+    case _ERROR:
         if l.error_ != nil {
-            l.error_.Output(DEP, fmt.Sprintf(format, args))
+            l.error_.Output(_DEP, fmt.Sprintf(format, args))
         }
     }
 }
@@ -62,21 +62,21 @@ func _log(logger string, level Level, args ...interface{}) {
         l = _loggers["root"]
     }
     switch level {
-    case DEBUG:
+    case _DEBUG:
         if l.debug_ != nil {
-            l.debug_.Output(DEP, fmt.Sprint(args...))
+            l.debug_.Output(_DEP, fmt.Sprint(args...))
         }
-    case INFO:
+    case _INFO:
         if l.info_ != nil {
-            l.info_.Output(DEP, fmt.Sprint(args...))
+            l.info_.Output(_DEP, fmt.Sprint(args...))
         }
-    case WARN:
+    case _WARN:
         if l.warn_ != nil {
-            l.warn_.Output(DEP, fmt.Sprint(args...))
+            l.warn_.Output(_DEP, fmt.Sprint(args...))
         }
-    case ERROR:
+    case _ERROR:
         if l.error_ != nil {
-            l.error_.Output(DEP, fmt.Sprint(args...))
+            l.error_.Output(_DEP, fmt.Sprint(args...))
         }
     }
 }

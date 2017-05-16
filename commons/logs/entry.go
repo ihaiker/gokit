@@ -6,14 +6,14 @@ import (
 )
 
 const (
-    DEBUG Level = "debug"
-    INFO Level = "info"
-    WARN Level = "warn"
-    ERROR Level = "error"
+    _DEBUG Level = "debug"
+    _INFO Level = "info"
+    _WARN Level = "warn"
+    _ERROR Level = "error"
 
-    LOG_FLAG int = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
+    _LOG_FLAG int = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
 
-    L_DEP int =  2
+    _L_DEP int =  2
 )
 
 type Level string
@@ -27,42 +27,42 @@ type LoggerEntry struct {
 
 func (self *LoggerEntry) Debug(args ...interface{}) {
     if self.debug_ != nil {
-        self.debug_.Output(L_DEP, fmt.Sprint(args...))
+        self.debug_.Output(_L_DEP, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Info(args ...interface{}) {
     if self.info_ != nil {
-        self.info_.Output(L_DEP, fmt.Sprint(args...))
+        self.info_.Output(_L_DEP, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Warn(args ...interface{}) {
     if self.warn_ != nil {
-        self.warn_.Output(L_DEP, fmt.Sprint(args...))
+        self.warn_.Output(_L_DEP, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Error(args ...interface{}) {
     if self.error_ != nil {
-        self.error_.Output(L_DEP, fmt.Sprint(args...))
+        self.error_.Output(_L_DEP, fmt.Sprint(args...))
     }
 }
 
 func (self *LoggerEntry) Debugf(format string, args ...interface{}) {
     if self.debug_ != nil {
-        self.debug_.Output(L_DEP, fmt.Sprintf(format, args...))
+        self.debug_.Output(_L_DEP, fmt.Sprintf(format, args...))
     }
 }
 func (self *LoggerEntry) Infof(format string, args ...interface{}) {
     if self.info_ != nil {
-        self.info_.Output(L_DEP, fmt.Sprintf(format, args...))
+        self.info_.Output(_L_DEP, fmt.Sprintf(format, args...))
     }
 }
 func (self *LoggerEntry) Warnf(format string, args ...interface{}) {
     if self.warn_ != nil {
-        self.warn_.Output(L_DEP, fmt.Sprintf(format, args...))
+        self.warn_.Output(_L_DEP, fmt.Sprintf(format, args...))
     }
 }
 func (self *LoggerEntry) Errorf(format string, args ...interface{}) {
     if self.error_ != nil {
-        self.error_.Output(L_DEP, fmt.Sprintf(format, args...))
+        self.error_.Output(_L_DEP, fmt.Sprintf(format, args...))
     }
 }
