@@ -69,6 +69,30 @@ func _appender(logger string, cfg *config.Config) io.Writer {
     }
     return ioutil.Discard
 }
+func _flag(logger string, cfg *config.Config) int {
+    if flagStr, err := cfg.GetString(logger + ".flag"); err != nil || flagStr == "" {
+        return _LOG_FLAG
+    } else {
+        var flag int
+        for _, f := range strings.Split(flagStr, " ") {
+            switch f {
+            case "date":
+                flag = flag | log.Ldate
+            case "time":
+                flag = flag | log.Ltime
+            case "longfile":
+                flag = flag | log.Llongfile
+            case "shortfile":
+                flag = flag | log.Lshortfile
+            case "UTC":
+                flag = flag | log.LUTC
+            case "microseconds":
+                flag = flag | log.Lmicroseconds
+            }
+        }
+        return flag
+    }
+}
 
 func SetConfig(configFile string) error {
     f := fileKit.New(configFile)
@@ -119,18 +143,27 @@ func SetConfigWithContent(content string) (err error) {
         logGroup := &LoggerEntry{}
         level := _level(loggerName, cfg)
         appender := _appender(loggerName, cfg)
+        flag := _flag(loggerName,cfg)
+
+        loggerNamePrefix := strings.ToUpper(loggerName)
+        if loggerNamePrefix == "ROOT" {
+            loggerNamePrefix = "[R] "
+        }else{
+            loggerNamePrefix = "[" + loggerNamePrefix + "] "
+        }
+
         switch level {
         case _DEBUG:
-            logGroup.debug_ = log.New(appender, "[D] ", _LOG_FLAG)
+            logGroup.debug_ = log.New(appender, loggerNamePrefix + "[D] ", flag)
             fallthrough
         case _INFO:
-            logGroup.info_ = log.New(appender, "[I] ", _LOG_FLAG)
+            logGroup.info_ = log.New(appender, loggerNamePrefix + "[I] ", flag)
             fallthrough
         case _WARN:
-            logGroup.warn_ = log.New(appender, "[W] ", _LOG_FLAG)
+            logGroup.warn_ = log.New(appender, loggerNamePrefix + "[W] ", flag)
             fallthrough
         case _ERROR:
-            logGroup.error_ = log.New(appender, "[E] ", _LOG_FLAG)
+            logGroup.error_ = log.New(appender, loggerNamePrefix + "[E] ", flag)
         }
         _loggers[loggerName] = logGroup
     }

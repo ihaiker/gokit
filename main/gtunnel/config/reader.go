@@ -32,9 +32,9 @@ func ReadConfig(args []string) (*Config,error) {
 	}
 	config := &Config{}
 	if jsonCfg, err := json.Config(fileKit.New(cfgFile)); err != nil {
-		panic(err)
+		return nil,err
 	} else if err := jsonCfg.Unmarshal(config); err != nil {
-		panic(err)
+		return nil,err
 	}
 	return config,nil
 }

@@ -37,13 +37,6 @@ var serverCmd = &cobra.Command{
 root:
     level: "debug"
     appender: "console"
-
-logger:
-    - "cmd"
-
-cmd:
-    level: "debug"
-    appender: "console"
 `)
         }else{
             //日志配置文件

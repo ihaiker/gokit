@@ -11,7 +11,7 @@ const (
     _WARN Level = "warn"
     _ERROR Level = "error"
 
-    _LOG_FLAG int = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
+    _LOG_FLAG int = log.LstdFlags | log.LUTC | log.Lshortfile
 
     _L_DEP int =  2
 )

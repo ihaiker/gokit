@@ -1,6 +1,7 @@
 root:
     level: "debug"
     appender: "console"
+    flag: "date time shortfile"
 
 logger:
     - "info"
@@ -14,7 +15,9 @@ console:
 info:
     level: "info"
     appender: "sock:/192.168.1.236:55"
+    flag: "date time longfile"
 
 error:
     level: "error"
     appender: "file:/tmp/error.log"
+    flag: "date time longfile"
