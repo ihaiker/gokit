@@ -39,19 +39,19 @@ func _logf(loggerName string, level Level, format string, args ...interface{}) {
     switch level {
     case _DEBUG:
         if l.debug_ != nil {
-            l.debug_.Output(_DEP, fmt.Sprintf(format, args))
+            l.debug_.Output(_DEP, fmt.Sprintf(format, args...))
         }
     case _INFO:
         if l.info_ != nil {
-            l.info_.Output(_DEP, fmt.Sprintf(format, args))
+            l.info_.Output(_DEP, fmt.Sprintf(format, args...))
         }
     case _WARN:
         if l.warn_ != nil {
-            l.warn_.Output(_DEP, fmt.Sprintf(format, args))
+            l.warn_.Output(_DEP, fmt.Sprintf(format, args...))
         }
     case _ERROR:
         if l.error_ != nil {
-            l.error_.Output(_DEP, fmt.Sprintf(format, args))
+            l.error_.Output(_DEP, fmt.Sprintf(format, args...))
         }
     }
 }
