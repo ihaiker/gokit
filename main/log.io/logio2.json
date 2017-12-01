@@ -1,0 +1,15 @@
+{
+    "http": "10.16.70.150:8081",
+    "cluster":"10.16.70.150:8080",
+    "auth": "ypf_logs",
+    "logs": [
+        {
+            "name": "[111]",
+            "path": "/var/log/system.log"
+        },
+        {
+            "name": "[2222]",
+            "path": "/data/test.log"
+        }
+    ]
+}
