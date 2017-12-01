@@ -3,53 +3,60 @@ package handler
 import (
     "github.com/kataras/iris"
     "github.com/kataras/iris/context"
-    "github.com/emirpasic/gods/lists/arraylist"
     "net/http"
     "encoding/json"
     "io/ioutil"
     "net/url"
-    "time"
+    "github.com/emirpasic/gods/sets/hashset"
+    "errors"
 )
 
 type Cluster struct {
-    Slave arraylist.List
+    Slave *hashset.Set
 }
 
-func (cluster *Cluster) joinCluster(app *iris.Application, slave, auth string) {
-    resp, err := http.Get("http://" + slave + "/cluster/logs?auth=" + auth)
-    if err != nil {
-        app.Logger().Infof("%s 获取信息错误", slave)
-        return
+func (cluster *Cluster) Slaves() []*Config {
+    cnf, _ := GetConfig()
+    var slaves []*Config
+    for _, e := range cluster.Slave.Values() {
+        slave := e.(string)
+        slaveConf, err := cluster.getSlave(slave, cnf.Auth)
+        if err != nil {
+            continue
+        }
+        slaves = append(slaves, slaveConf);
     }
-    defer resp.Body.Close()
-    slaveConfig := new(Config)
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        app.Logger().Warnf("加入失败：%s", err.Error())
-        return
+    return slaves
+}
+
+func (cluster *Cluster) getSlave(slave, auth string) (*Config, error) {
+    if resp, err := http.Get("http://" + slave + "/cluster/logs?auth=" + auth); err != nil {
+        return nil, err
+    } else {
+        defer resp.Body.Close()
+        if resp.StatusCode != iris.StatusOK {
+            return nil, errors.New("status not 200")
+        }
+        slaveConfig := new(Config)
+        body, _ := ioutil.ReadAll(resp.Body)
+        if err := json.Unmarshal(body, slaveConfig); err != nil {
+            return nil, err
+        }
+        return slaveConfig, nil
     }
-    err = json.Unmarshal(body, slaveConfig)
-    if err != nil {
-        app.Logger().Warnf("加入失败：%s", err.Error())
-        return
-    }
-    cluster.Slave.Add(slaveConfig)
 }
 
 func (cluster *Cluster) InitCluster(app *iris.Application) {
     log := app.Logger()
-    conf, _ := GetConfig()
 
     //加入集群中
     app.Post("/cluster/join", func(ctx context.Context) {
+        conf, _ := GetConfig()
         slave := ctx.PostValue("slave")
         auth := ctx.PostValue("auth")
         if auth == conf.Auth {
             log.Infof("%s 加入集群", slave)
-            go func() {
-                time.Sleep(time.Second * 3)
-                cluster.joinCluster(app, slave, auth)
-            }()
+            cluster.Slave.Add(slave)
             ctx.StatusCode(iris.StatusNoContent)
         } else {
             log.Infof("%s 加入集错误，无法认证", slave)
@@ -59,14 +66,16 @@ func (cluster *Cluster) InitCluster(app *iris.Application) {
 
     //获取日志文件
     app.Get("/cluster/logs", func(ctx context.Context) {
+        loadConfig, _ := GetConfig()
         auth := ctx.URLParamTrim("auth")
-        if auth != conf.Auth {
+        if auth != loadConfig.Auth {
             ctx.StatusCode(iris.StatusForbidden)
             return
         }
-        ctx.JSON(conf)
+        ctx.JSON(loadConfig)
     })
 
+    conf, _ := GetConfig()
     if conf.Cluster != "" {
         addr := "http://" + conf.Cluster + "/cluster/join"
         values := url.Values{}
@@ -82,4 +91,4 @@ func (cluster *Cluster) InitCluster(app *iris.Application) {
     }
 }
 
-var ClusterP = new(Cluster)
+var ClusterP = Cluster{Slave: hashset.New()}

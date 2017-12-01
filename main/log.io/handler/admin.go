@@ -11,9 +11,7 @@ func InitAdmin(app *iris.Application) {
     app.Get("/", func(ctx context.Context) {
         conf, _ := GetConfig()
         ctx.ViewData("Logs", conf.Logs)
-        if ClusterP.Slave.Size() > 0 {
-            ctx.ViewData("Slaves", ClusterP.Slave.Values())
-        }
+        ctx.ViewData("Slaves", ClusterP.Slaves())
         ctx.View("index.html")
     })
 
@@ -33,8 +31,7 @@ func InitAdmin(app *iris.Application) {
     app.Get("/console/{remote}/{fid}", func(ctx context.Context) {
         fid := ctx.Params().Get("fid")
         remote := ctx.Params().Get("remote")
-        for _, v := range ClusterP.Slave.Values() {
-            slave, _ := v.(*Config)
+        for _, slave := range ClusterP.Slaves() {
             if slave.Http == remote {
                 for _, fileConf := range slave.Logs {
                     if fileConf.Id == fid {

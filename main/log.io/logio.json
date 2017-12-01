@@ -9,6 +9,10 @@
         {
             "name": "持续日志模块",
             "path": "/data/test.log"
+        },
+        {
+            "name": "持续日志模123123块",
+            "path": "/data/test.log"
         }
     ]
 }

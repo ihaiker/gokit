@@ -1,6 +1,6 @@
 {
-    "http": "10.16.70.150:8081",
-    "cluster":"10.16.70.150:8080",
+    "http": "10.16.70.155:8081",
+    "cluster":"10.16.70.155:8080",
     "auth": "ypf_logs",
     "logs": [
         {
@@ -8,7 +8,11 @@
             "path": "/var/log/system.log"
         },
         {
-            "name": "[2222]",
+            "name": "[测试第二个]",
+            "path": "/data/test.log"
+        },
+        {
+            "name": "[第三个]",
             "path": "/data/test.log"
         }
     ]
