@@ -2,11 +2,11 @@ package main
 
 import (
     "github.com/kataras/iris"
-
     "github.com/kataras/golog"
     "github.com/ihaiker/gokit/main/log.io/handler"
-
+    "github.com/ihaiker/gokit/main/log.io/bindata/templates"
     "fmt"
+    "github.com/ihaiker/gokit/main/log.io/bindata/assert"
 )
 
 func main() {
@@ -17,8 +17,16 @@ func main() {
     }
     app := iris.New()
     app.Logger().Level = golog.DebugLevel
-    app.RegisterView(iris.HTML("./templates", ".html"))
-    app.StaticWeb("/static/js", "./static/js")
+
+    tmpl := iris.HTML("./templates", ".html")
+    // $ go get -u github.com/jteeuwen/go-bindata/...
+    //go-bindata -pkg templates -o bindata/templates/bindata.go ./templates/...
+    tmpl.Binary(templates.Asset, templates.AssetNames)
+    app.RegisterView(tmpl)
+
+    //go-bindata -pkg static -o bindata/assert/bindata.go ./static/...
+    app.StaticEmbedded("/static", "./static", static.Asset, static.AssetNames)
+
 
     handler.InitAdmin(app)
     handler.InitWebsocket(app)
