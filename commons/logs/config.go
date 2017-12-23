@@ -28,7 +28,7 @@ func _level(logger string, cfg *config.Config) Level {
     if level, err := cfg.GetString(logger + ".level"); err != nil {
         panic(err)
     } else {
-        return Level(strings.ToLower(level))
+        return FromString(level)
     }
 }
 
@@ -131,40 +131,22 @@ func SetConfigWithContent(content string) (err error) {
         }
     }
 
-    {
-        //root is default
-        appender := _appender("root", cfg)
-        log.SetOutput(appender)
-        log.SetPrefix("[R] ")
-        log.SetFlags(_LOG_FLAG)
-    }
-
     config_logger := func(loggerName string) {
         logGroup := &LoggerEntry{}
-        level := _level(loggerName, cfg)
+        logGroup.level = _level(loggerName, cfg)
         appender := _appender(loggerName, cfg)
-        flag := _flag(loggerName,cfg)
+        flag := _flag(loggerName, cfg)
 
-        loggerNamePrefix := strings.ToUpper(loggerName)
-        if loggerNamePrefix == "ROOT" {
-            loggerNamePrefix = "[R] "
-        }else{
-            loggerNamePrefix = "[" + loggerNamePrefix + "] "
+        if loggerName == "root" {
+            log.SetOutput(appender)
+            log.SetPrefix("root ")
+            log.SetFlags(_LOG_FLAG)
         }
 
-        switch level {
-        case _DEBUG:
-            logGroup.debug_ = log.New(appender, loggerNamePrefix + "[D] ", flag)
-            fallthrough
-        case _INFO:
-            logGroup.info_ = log.New(appender, loggerNamePrefix + "[I] ", flag)
-            fallthrough
-        case _WARN:
-            logGroup.warn_ = log.New(appender, loggerNamePrefix + "[W] ", flag)
-            fallthrough
-        case _ERROR:
-            logGroup.error_ = log.New(appender, loggerNamePrefix + "[E] ", flag)
-        }
+        logGroup.debug_ = log.New(appender, "[D]"+loggerName+" ", flag)
+        logGroup.info_ = log.New(appender, "[I]"+loggerName+" ", flag)
+        logGroup.warn_ = log.New(appender, "[W]"+loggerName+" ", flag)
+        logGroup.error_ = log.New(appender, "[E]"+loggerName+" ", flag)
         _loggers[loggerName] = logGroup
     }
     config_logger("root")
@@ -180,16 +162,13 @@ func SetConfigWithContent(content string) (err error) {
 func init() {
     f := fileKit.New("./conf/logs.yaml")
     if f.Exist() {
-        log.Println("use log config file ",f.GetPath())
         content, _ := f.ToString()
         if err := SetConfigWithContent(content); err != nil {
             log.Panic("set config :", err.Error())
         }
     } else {
-        log.Println("the config file ",f.GetPath()," not found !")
         if err := SetConfigWithContent(""); err != nil {
             log.Panic("set config :", err.Error())
         }
     }
 }
-
