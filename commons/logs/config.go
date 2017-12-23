@@ -159,6 +159,16 @@ func SetConfigWithContent(content string) (err error) {
     return
 }
 
+func SetAllLevel(level Level) {
+    for _, v := range _loggers {
+        v.level = level
+    }
+}
+
+func GetLogger(name string) *LoggerEntry {
+    return _loggers[name]
+}
+
 func init() {
     f := fileKit.New("./conf/logs.yaml")
     if f.Exist() {

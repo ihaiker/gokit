@@ -1,6 +1,9 @@
 package logs
 
-import "fmt"
+import (
+    "fmt"
+    "os"
+)
 
 const _DEP int = 3
 
@@ -16,7 +19,10 @@ func Warn(args ...interface{}) {
 func Error(args ...interface{}) {
     _log("root", ERROR, args...)
 }
-
+func Fatal(args ...interface{}) {
+    _log("root", ERROR, args...)
+    os.Exit(1)
+}
 func Debugf(format string, args ...interface{}) {
     _logf("root", DEBUG, format, args...)
 }
@@ -30,7 +36,10 @@ func Warnf(format string, args ...interface{}) {
 func Errorf(format string, args ...interface{}) {
     _logf("root", DEBUG, format, args...)
 }
-
+func Fatalf(format string, args ...interface{}) {
+    _logf("root", DEBUG, format, args...)
+    os.Exit(1)
+}
 func _logf(loggerName string, level Level, format string, args ...interface{}) {
     l, has := _loggers[loggerName]
     if !has {
