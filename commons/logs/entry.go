@@ -84,6 +84,16 @@ func (self *LoggerEntry) Error(args ...interface{}) {
         self.error_.Output(_L_DEP, fmt.Sprint(args...))
     }
 }
+func (self *LoggerEntry) Print(args ...interface{}) {
+    if self.level.PrintLevel(DEBUG) {
+        self.debug_.Output(_L_DEP, fmt.Sprint(args...))
+    }
+}
+func (self *LoggerEntry) Println(args ...interface{}) {
+    if self.level.PrintLevel(DEBUG) {
+        self.debug_.Output(_L_DEP, fmt.Sprint(args...))
+    }
+}
 
 func (self *LoggerEntry) Debugf(format string, args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
