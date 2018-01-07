@@ -14,7 +14,7 @@ import (
     "strings"
 )
 
-var _loggers = make(map[string]*LoggerEntry)
+var _loggers map[string]*LoggerEntry
 
 const default_config = `
 root:
@@ -115,6 +115,7 @@ func SetConfigWithContent(content string) (err error) {
             }
         }
     }()
+    _loggers = make(map[string]*LoggerEntry)
 
     //init config
     var cfg *config.Config
@@ -140,13 +141,13 @@ func SetConfigWithContent(content string) (err error) {
         if loggerName == "root" {
             log.SetOutput(appender)
             log.SetPrefix("root ")
-            log.SetFlags(_LOG_FLAG)
+            log.SetFlags(flag)
         }
 
-        logGroup.debug_ = log.New(appender, "[D]"+loggerName+" ", flag)
-        logGroup.info_ = log.New(appender, "[I]"+loggerName+" ", flag)
-        logGroup.warn_ = log.New(appender, "[W]"+loggerName+" ", flag)
-        logGroup.error_ = log.New(appender, "[E]"+loggerName+" ", flag)
+        logGroup.debug_ = log.New(appender, "[D] "+loggerName+" ", flag)
+        logGroup.info_ = log.New(appender, "[I] "+loggerName+" ", flag)
+        logGroup.warn_ = log.New(appender, "[W] "+loggerName+" ", flag)
+        logGroup.error_ = log.New(appender, "[E] "+loggerName+" ", flag)
         _loggers[loggerName] = logGroup
     }
     config_logger("root")
@@ -157,16 +158,6 @@ func SetConfigWithContent(content string) (err error) {
         }
     }
     return
-}
-
-func SetAllLevel(level Level) {
-    for _, v := range _loggers {
-        v.level = level
-    }
-}
-
-func GetLogger(name string) *LoggerEntry {
-    return _loggers[name]
 }
 
 func init() {

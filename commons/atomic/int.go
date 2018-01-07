@@ -41,6 +41,10 @@ func (self *AtomicInt32) GetAndAdd(i int32) (int32) {
 	return ret
 }
 
+func (self *AtomicInt32) Set(i int32) {
+    atomic.StoreInt32(&self.value,i)
+}
+
 func (self *AtomicInt32) CompareAndSet(expect int32, update  int32) (bool) {
 	return atomic.CompareAndSwapInt32(&self.value, expect, update)
 }
@@ -99,6 +103,10 @@ func (self *AtomicUInt32) GetAndAdd(i uint32) (uint32) {
 		}
 	}
 	return ret
+}
+
+func (self *AtomicUInt32) Set(i uint32) {
+    atomic.StoreUint32(&self.value,i)
 }
 
 func (self *AtomicUInt32) CompareAndSet(expect uint32, update  uint32) (bool) {

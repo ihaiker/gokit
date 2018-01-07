@@ -28,13 +28,13 @@ func Debugf(format string, args ...interface{}) {
 }
 
 func Infof(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _logf("root", INFO, format, args...)
 }
 func Warnf(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _logf("root", WARN, format, args...)
 }
 func Errorf(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _logf("root", ERROR, format, args...)
 }
 func Fatalf(format string, args ...interface{}) {
     _logf("root", DEBUG, format, args...)
@@ -77,6 +77,24 @@ func _log(logger string, level Level, args ...interface{}) {
         }
     }
 }
+
+func SetAllLevel(level Level) {
+    for _, v := range _loggers {
+        v.level = level
+    }
+}
+
+//获得一个已经存在的日志器
+func GetLogger(name string) *LoggerEntry {
+    return _loggers[name]
+}
+
+//获取root日志器
+func RootLogger() *LoggerEntry {
+    return _loggers["root"]
+}
+
+//获取一个命名为loggerName的logger对象，如果没有找到就使用默认的root对象
 func Logger(loggerName string) *LoggerEntry {
     if l, has := _loggers[loggerName]; has {
         return l

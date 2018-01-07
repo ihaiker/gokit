@@ -1,21 +1,11 @@
-package gotcp
+package tcpKit
 
-const (
-	PACKET_SEND_CHAN_LIMIT = 20
-	PACKET_RECEIVE_CHAN_LIMIT = 20
-)
+import "time"
 
 type Config struct {
-	PacketSendChanLimit    uint32 // the limit of packet send channel
-	PacketReceiveChanLimit uint32 // the limit of packet receive channel
-	AsyncMessageHand       bool   // asynchronous message handling
-}
-
-func DefConfig() *Config {
-	cfg := &Config{
-		PacketSendChanLimit     : PACKET_SEND_CHAN_LIMIT,
-		PacketReceiveChanLimit  : PACKET_RECEIVE_CHAN_LIMIT,
-		AsyncMessageHand        : false,
-	}
-	return cfg
+    PacketSendChanLimit    uint32 // the limit of packet send channel
+    PacketReceiveChanLimit uint32 // the limit of packet receive channel
+    AsynHandler            bool   // asynchronous handler message
+    AcceptTimeout          time.Duration
+    IdleTime, IdleTimeout  int //heartbeat time,and timeout 
 }

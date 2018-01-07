@@ -97,6 +97,15 @@ func (self *File) GetWriter(append bool) (*os.File, error) {
     return os.OpenFile(self.path, flag, 0666)
 }
 
+func (self *File) Size() int64 {
+    if self.IsFile() {
+        f, _ := os.Stat(self.path);
+        return f.Size()
+    } else {
+        return -1
+    }
+}
+
 func (self *File) LineIterator() (commonKit.CloseIterator, error) {
     if self.Exist() && self.IsFile() {
         f, err := os.OpenFile(self.path, (os.O_RDWR | os.O_APPEND), 0666)
