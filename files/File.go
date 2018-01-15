@@ -6,6 +6,7 @@ import (
     "path/filepath"
     "io/ioutil"
     "github.com/ihaiker/gokit/commons"
+    "github.com/hpcloud/tail"
 )
 
 type File struct {
@@ -108,12 +109,19 @@ func (self *File) Size() int64 {
 
 func (self *File) LineIterator() (commonKit.CloseIterator, error) {
     if self.Exist() && self.IsFile() {
-        f, err := os.OpenFile(self.path, (os.O_RDWR | os.O_APPEND), 0666)
+        f, err := self.GetReader()
         if err != nil {
             return nil, err
         } else {
             return newIterator(f), nil
         }
+    }
+    return nil, errors.New("not found or is not file")
+}
+
+func (self *File) Tail() (*tail.Tail, error) {
+    if self.Exist() && self.IsFile() {
+        return tail.TailFile(self.GetPath(), tail.Config{Follow: true, MustExist: true})
     }
     return nil, errors.New("not found or is not file")
 }

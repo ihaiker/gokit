@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
     "github.com/ihaiker/gokit/commons/logs"
+    "path/filepath"
 )
 
 // InitSignal register signals handler.
