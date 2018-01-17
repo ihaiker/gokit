@@ -1,6 +1,9 @@
 package tcpKit
 
-import "time"
+import (
+    "time"
+    "encoding/json"
+)
 
 type Config struct {
     // the limit of packet send channel
@@ -13,4 +16,9 @@ type Config struct {
     //heartbeat time,and timeout
     IdleTime    int `json:"idle_time" yaml:"idle_time"`
     IdleTimeout int `json:"idle_timeout" yaml:"idle_timeout"`
+}
+
+func (cfg *Config) String() string {
+    bs, _ := json.Marshal(cfg)
+    return string(bs)
 }

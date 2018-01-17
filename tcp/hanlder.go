@@ -43,10 +43,10 @@ func (h *HandlerWrapper) OnError(c *Connect, err error, msg interface{}) {
     logs.Debugf("Handler OnError %s : %s ,%s", c.connect.RemoteAddr().String(), err, msg)
 }
 func (h *HandlerWrapper) OnEncodeError(c *Connect, msg interface{}, err error) {
-    logs.Debugf("Handler OnError %s : %s", c.connect.RemoteAddr().String(), err)
+    logs.Debugf("Handler OnEncodeError %s : %s", c.connect.RemoteAddr().String(), err)
 }
 func (h *HandlerWrapper) OnDecodeError(c *Connect, err error) {
-    logs.Debugf("Handler OnError %s : %s", c.connect.RemoteAddr().String(), err)
+    logs.Debugf("Handler OnDecodeError %s : %s", c.connect.RemoteAddr().String(), err)
 }
 func (h *HandlerWrapper) OnIdle(c *Connect) {
     logs.Debugf("Handler OnIdle : %s", c.connect.RemoteAddr().String())

@@ -38,7 +38,7 @@ func (s *Server) Start(listener *net.TCPListener) {
         listener.Close()
         s.waitGroup.Done()
     }()
-    s.logger.Debugf("服务启动：%s", listener.Addr().String())
+    s.logger.Debugf("TCP服务启动：%s", listener.Addr().String())
     for {
         select {
         case <-s.exitChan:
@@ -70,7 +70,7 @@ func (s *Server) Start(listener *net.TCPListener) {
 
 // Stop stops service
 func (s *Server) Stop() {
-    s.logger.Debug("关闭服务")
+    s.logger.Debug("关闭TCP服务")
     close(s.exitChan)
     for _, v := range s.clients {
         if v != nil {
@@ -78,7 +78,7 @@ func (s *Server) Stop() {
         }
     }
     s.waitGroup.Wait()
-    s.logger.Debug("关闭服务完成")
+    s.logger.Debug("关闭TCP服务完成")
 }
 
 // NewServer creates a server

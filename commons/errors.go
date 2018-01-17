@@ -1,6 +1,9 @@
 package commonKit
 
-import "errors"
+import (
+    "errors"
+    "fmt"
+)
 
 //Try handler(err)
 func Try(fun func(), handler func(interface{})) {
@@ -11,10 +14,11 @@ func Try(fun func(), handler func(interface{})) {
     }()
     fun()
 }
+
 //Try handler(err) and finally
 func TryFinally(fun func(), handler func(interface{}), finallyFn func()) {
     defer finallyFn()
-    Try(fun,handler)
+    Try(fun, handler)
 }
 
 func Catch(e error) {
@@ -23,6 +27,8 @@ func Catch(e error) {
             e = er
         } else if er, ok := r.(string); ok {
             e = errors.New(er)
+        } else {
+            e = errors.New(fmt.Sprintf("%s", r))
         }
     }
 }
@@ -40,6 +46,7 @@ func PanicIfPresent(err interface{}) {
         panic(err)
     }
 }
+
 //如果不为空，使用msgpanic错误，
 func PanicMessageIfPresent(err interface{}, msg string) {
     if err != nil {

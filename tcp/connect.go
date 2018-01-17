@@ -164,7 +164,7 @@ func (c *Connect) heartbeatLoop() {
         c.logger.Debugf("close heartbeat: %s", c.connect.RemoteAddr().String())
         c.signClose()
     }()
-    c.idleTimer = time.NewTimer(time.Millisecond * time.Duration(c.config.IdleTime))
+    c.idleTimer = time.NewTimer(time.Millisecond * time.Duration(c.config.IdleTime) )
     c.idleFlag = atomicKit.NewInt32()
 
     for {
@@ -172,8 +172,8 @@ func (c *Connect) heartbeatLoop() {
         case <-c.closeChan:
             return
         case <-c.idleTimer.C:
-            if c.idleFlag.GetAndIncrement() == 0 {
-                c.idleTimer.Reset(time.Millisecond * time.Duration(c.config.IdleTimeout))
+            if c.idleFlag.GetAndIncrement() < int32(c.config.IdleTimeout) {
+                c.idleTimer.Reset(time.Millisecond * time.Duration(c.config.IdleTime))
                 c.Handler.OnIdle(c)
             } else {
                 c.logger.Debugf("ReadTimerOut : %s", c.connect.RemoteAddr().String())
@@ -206,7 +206,7 @@ func (c *Connect) IsClosed() bool {
 
 func (c *Connect) signClose() {
     if !c.IsClosed() {
-        c.logger.Debugf("发送关闭信息：%s", c.connect.RemoteAddr().String())
+        c.logger.Debugf("发送TCP关闭信息：%s", c.connect.RemoteAddr().String())
         c.closeFlag.Set(1)
         close(c.closeChan)
     }
@@ -214,14 +214,14 @@ func (c *Connect) signClose() {
 
 func (c *Connect) Close() {
     c.once.Do(func() {
-        c.logger.Debugf("关闭连接[Start]：%s", c.connect.RemoteAddr().String())
+        c.logger.Debugf("关闭TCP连接[Start]：%s", c.connect.RemoteAddr().String())
         c.group.Add(1)
         c.signClose()
         c.Handler.OnClose(c)
         close(c.sendChan)
         c.connect.Close()
         c.group.Done()
-        c.logger.Debugf("关闭连接[End]：%s", c.connect.RemoteAddr().String())
+        c.logger.Debugf("关闭TCP连接[End]：%s", c.connect.RemoteAddr().String())
     })
     c.group.Wait()
 }
