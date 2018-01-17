@@ -16,7 +16,7 @@ type Handler interface {
     //编码异常事件，当编码消息时
     OnEncodeError(c *Connect, msg interface{}, err error)
     //处理错误事件，当OnMessage抛出未能处理的错误
-    OnError(c *Connect, err error)
+    OnError(c *Connect, err error, msg interface{})
     //解码异常事件，解码时错误
     OnDecodeError(c *Connect, err error)
     //发送心跳包
@@ -39,8 +39,8 @@ func (h *HandlerWrapper) OnMessage(c *Connect, msg interface{}) {
 func (h *HandlerWrapper) OnClose(c *Connect) {
     logs.Debugf("Handler OnClose %s ", c.connect.RemoteAddr().String())
 }
-func (h *HandlerWrapper) OnError(c *Connect, err error) {
-    logs.Debugf("Handler OnError %s : %s", c.connect.RemoteAddr().String(), err)
+func (h *HandlerWrapper) OnError(c *Connect, err error, msg interface{}) {
+    logs.Debugf("Handler OnError %s : %s ,%s", c.connect.RemoteAddr().String(), err, msg)
 }
 func (h *HandlerWrapper) OnEncodeError(c *Connect, msg interface{}, err error) {
     logs.Debugf("Handler OnError %s : %s", c.connect.RemoteAddr().String(), err)

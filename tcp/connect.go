@@ -144,13 +144,13 @@ func (c *Connect) readLoop() {
                     go commonKit.Try(func() {
                         c.Handler.OnMessage(c, msg)
                     }, func(err interface{}) {
-                        c.Handler.OnError(c, err.(error))
+                        c.Handler.OnError(c, err.(error), msg)
                     })
                 } else {
                     commonKit.Try(func() {
                         c.Handler.OnMessage(c, msg)
                     }, func(err interface{}) {
-                        c.Handler.OnError(c, err.(error))
+                        c.Handler.OnError(c, err.(error), msg)
                     })
                 }
             }
