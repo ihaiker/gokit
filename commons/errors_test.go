@@ -29,3 +29,17 @@ func TestCatch(t *testing.T) {
     err := testCatch()
     t.Log(err)
 }
+
+func TestDCatch(t *testing.T) {
+    testCatch := func() (err error) {
+        defer func() { err = DCatch(recover(), err) }()
+
+        i := 1
+        j := 1
+        n := 19 / (i - j)
+        fmt.Println(n)
+        return
+    }
+    err := testCatch()
+    t.Log(err)
+}

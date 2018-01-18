@@ -35,6 +35,13 @@ func Catch(r interface{}) error {
     return e
 }
 
+func DCatch(r interface{}, err error) error{
+    if err != nil {
+        return err
+    }
+    return Catch(r)
+}
+
 //如果不为空panic错误
 func IfPanic(err interface{}) {
     if err != nil {
