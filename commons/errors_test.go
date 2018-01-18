@@ -17,16 +17,15 @@ func TestTry(t *testing.T) {
 }
 
 func TestCatch(t *testing.T) {
+    testCatch := func() (err error) {
+        defer func() { err = Catch(recover()) }()
+
+        i := 1
+        j := 1
+        n := 19 / (i - j)
+        fmt.Println(n)
+        return
+    }
     err := testCatch()
     t.Log(err)
-}
-
-func testCatch() (err error) {
-    defer func() { err = Catch(recover()) }()
-
-    i := 1
-    j := 1
-    n := 19 / (i - j)
-    fmt.Println(n)
-    return
 }
