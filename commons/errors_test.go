@@ -2,6 +2,7 @@ package commonKit
 
 import (
     "testing"
+    "fmt"
 )
 
 func TestTry(t *testing.T) {
@@ -10,7 +11,22 @@ func TestTry(t *testing.T) {
     Try(func() {
         n := 19 / (i - j)
         t.Log(n)
-    }, func(i interface{}) {
-        t.Error("已捕获：", i)
+    }, func(err error) {
+        t.Error("已捕获：", err)
     })
+}
+
+func TestCatch(t *testing.T) {
+    err := testCatch()
+    t.Log(err)
+}
+
+func testCatch() (err error) {
+    defer func() { err = Catch(recover()) }()
+
+    i := 1
+    j := 1
+    n := 19 / (i - j)
+    fmt.Println(n)
+    return
 }

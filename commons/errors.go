@@ -6,9 +6,9 @@ import (
 )
 
 //Try handler(err)
-func Try(fun func(), handler func(interface{})) {
+func Try(fun func(), handler func(error)) {
     defer func() {
-        if err := recover(); err != nil {
+        if err := Catch(recover()); err != nil {
             handler(err)
         }
     }()
@@ -16,13 +16,14 @@ func Try(fun func(), handler func(interface{})) {
 }
 
 //Try handler(err) and finally
-func TryFinally(fun func(), handler func(interface{}), finallyFn func()) {
+func TryFinally(fun func(), handler func(error), finallyFn func()) {
     defer finallyFn()
     Try(fun, handler)
 }
 
-func Catch(e error) {
-    if r := recover(); r != nil {
+func Catch(r interface{}) error {
+    var e error = nil
+    if r != nil {
         if er, ok := r.(error); ok {
             e = er
         } else if er, ok := r.(string); ok {
@@ -31,6 +32,7 @@ func Catch(e error) {
             e = errors.New(fmt.Sprintf("%s", r))
         }
     }
+    return e
 }
 
 //如果不为空panic错误
