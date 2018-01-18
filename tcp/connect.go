@@ -63,7 +63,8 @@ func (c *Connect) Write(msg interface{}) (err error) {
     if c.IsClosed() {
         return ErrConnClosing
     }
-    defer commonKit.Catch(err)
+    defer func() { err = commonKit.Catch(recover()) }()
+
     if bytes, err := c.Protocol.Encode(msg); err != nil {
         return err
     } else if _, err := c.connect.Write(bytes); err != nil {
@@ -79,7 +80,7 @@ func (c *Connect) AsyncWrite(msg interface{}, timeout time.Duration) (err error)
     if c.IsClosed() {
         return ErrConnClosing
     }
-    defer commonKit.Catch(err)
+    defer func() { err = commonKit.Catch(recover()) }()
 
     select {
     case c.sendChan <- msg:
@@ -143,13 +144,13 @@ func (c *Connect) readLoop() {
                 if c.config.AsynHandler {
                     go commonKit.Try(func() {
                         c.Handler.OnMessage(c, msg)
-                    }, func(err interface{}) {
+                    }, func(err error) {
                         c.Handler.OnError(c, err.(error), msg)
                     })
                 } else {
                     commonKit.Try(func() {
                         c.Handler.OnMessage(c, msg)
-                    }, func(err interface{}) {
+                    }, func(err error) {
                         c.Handler.OnError(c, err.(error), msg)
                     })
                 }
@@ -164,7 +165,7 @@ func (c *Connect) heartbeatLoop() {
         c.logger.Debugf("close heartbeat: %s", c.connect.RemoteAddr().String())
         c.signClose()
     }()
-    c.idleTimer = time.NewTimer(time.Millisecond * time.Duration(c.config.IdleTime) )
+    c.idleTimer = time.NewTimer(time.Millisecond * time.Duration(c.config.IdleTime))
     c.idleFlag = atomicKit.NewInt32()
 
     for {
