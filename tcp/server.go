@@ -84,7 +84,7 @@ func (s *Server) Stop() {
 // NewServer creates a server
 func NewServer(config *Config, handlerMaker HandlerMaker, protocolMaker ProtocolMaker) *Server {
     if config.IdleTimeout == 0 {
-        config.IdleTimeout = config.IdleTime
+        config.IdleTimeout = 2
     }
     return &Server{
         config: config,

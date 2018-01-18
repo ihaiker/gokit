@@ -10,8 +10,8 @@ import (
 
 var config = &tcpKit.Config{
     PacketReceiveChanLimit: 10, PacketSendChanLimit: 10,
-    AcceptTimeout:          100,
-    IdleTime:               7000,
+    AcceptTimeout:          3,
+    IdleTime:               1000,
 }
 
 type TestHandlerWrapper struct {
@@ -21,7 +21,9 @@ type TestHandlerWrapper struct {
 func (h *TestHandlerWrapper) OnMessage(c *tcpKit.Connect, msg interface{}) {
     newMsg := time.Now().String()
     logs.Debugf("新消息：%s，回复：%s", msg, newMsg)
-    c.AsyncWrite(newMsg, time.Second)
+    if err := c.AsyncWrite(newMsg, time.Second); err != nil {
+        logs.Info("发送异常：",err)
+    }
 }
 
 func (h *TestHandlerWrapper) OnIdle(c *tcpKit.Connect) {
