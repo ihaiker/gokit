@@ -47,6 +47,7 @@ func (c *Connect) Do(done func(connect *Connect)) {
     if c.config.IdleTime > 0 {
         go c.syncDo(c.heartbeatLoop)
     }
+    c.Handler.OnConnect(c)
     c.waitForStop()
 }
 
@@ -102,6 +103,7 @@ func (c *Connect) PopUnSend(timeout time.Duration) (bytes interface{}) {
 }
 
 func (c *Connect) writeLoop() {
+    c.logger.Debug("启动 write loop")
     defer func() {
         c.logger.Debugf("close writer: %s", c.connect.RemoteAddr().String())
         c.signClose()
@@ -124,6 +126,8 @@ func (c *Connect) writeLoop() {
 }
 
 func (c *Connect) readLoop() {
+    c.logger.Debug("启动 read loop")
+
     defer func() {
         c.logger.Debugf("close reader: %s", c.connect.RemoteAddr().String())
         c.signClose()
@@ -160,6 +164,7 @@ func (c *Connect) readLoop() {
 }
 
 func (c *Connect) heartbeatLoop() {
+    c.logger.Debug("启动 heartbeat loop")
     defer func() {
         c.idleTimer.Stop()
         c.logger.Debugf("close heartbeat: %s", c.connect.RemoteAddr().String())
@@ -173,7 +178,7 @@ func (c *Connect) heartbeatLoop() {
         case <-c.closeChan:
             return
         case <-c.idleTimer.C:
-            if c.idleFlag.GetAndIncrement() < int32(c.config.IdleTimeout) {
+            if c.idleFlag.GetAndIncrement() <= int32(c.config.IdleTimeout) {
                 c.idleTimer.Reset(time.Millisecond * time.Duration(c.config.IdleTime))
                 c.Handler.OnIdle(c)
             } else {

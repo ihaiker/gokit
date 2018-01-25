@@ -10,6 +10,10 @@ type TestClientHandlerWrapper struct {
     tcpKit.HandlerWrapper
 }
 
+func (h *TestClientHandlerWrapper) OnConnect(c *tcpKit.Connect) {
+    h.HandlerWrapper.OnConnect(c)
+    logs.Info(c.Write("GGGGGG 测试结果是什么？"))
+}
 
 func main() {
     var config = &tcpKit.Config{
@@ -22,7 +26,7 @@ func main() {
 
     go func() {
         if err := s.StartAt("127.0.0.1:6379"); err != nil {
-            logs.Fatal("启动连接错误：",err)
+            logs.Fatal("启动连接错误：", err)
         }
     }()
     defer s.Close()

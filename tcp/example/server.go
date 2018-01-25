@@ -26,6 +26,11 @@ func (h *TestHandlerWrapper) OnMessage(c *tcpKit.Connect, msg interface{}) {
     }
 }
 
+func (h *TestHandlerWrapper) OnConnect(c *tcpKit.Connect) {
+    h.HandlerWrapper.OnConnect(c)
+    logs.Info(c.Write("Server 测试结果是什么？"))
+}
+
 func (h *TestHandlerWrapper) OnIdle(c *tcpKit.Connect) {
     h.HandlerWrapper.OnIdle(c)
     c.Write("IDLE")
