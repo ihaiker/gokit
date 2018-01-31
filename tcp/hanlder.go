@@ -52,4 +52,69 @@ func (h *HandlerWrapper) OnIdle(c *Connect) {
     logs.Debugf("Handler OnIdle : %s", c.connect.RemoteAddr().String())
 }
 
+type regHandler struct {
+    def           Handler
+    onConnect     func(c *Connect)
+    onMessage     func(c *Connect, msg interface{})
+    onEncodeError func(c *Connect, msg interface{}, err error)
+    onError       func(c *Connect, err error, msg interface{})
+    onDecodeError func(c *Connect, err error)
+    onIdle        func(c *Connect)
+    onClose       func(c *Connect)
+}
+
+func newRegHandler() *regHandler {
+    return &regHandler{def: &HandlerWrapper{}}
+}
+
+func (h *regHandler) OnConnect(c *Connect) {
+    if h.onConnect == nil {
+        h.def.OnConnect(c)
+    } else {
+        h.onConnect(c)
+    }
+}
+func (h *regHandler) OnMessage(c *Connect, msg interface{}) {
+    if h.onMessage == nil {
+        h.def.OnMessage(c, msg)
+    } else {
+        h.onMessage(c, msg)
+    }
+}
+func (h *regHandler) OnClose(c *Connect) {
+    if h.onClose == nil {
+        h.def.OnClose(c)
+    } else {
+        h.onClose(c)
+    }
+}
+func (h *regHandler) OnError(c *Connect, err error, msg interface{}) {
+    if h.onError == nil {
+        h.def.OnError(c, err, msg)
+    } else {
+        h.onError(c, err, msg)
+    }
+}
+func (h *regHandler) OnEncodeError(c *Connect, msg interface{}, err error) {
+    if h.onEncodeError == nil {
+        h.def.OnEncodeError(c, msg, err)
+    } else {
+        h.onEncodeError(c, msg, err)
+    }
+}
+func (h *regHandler) OnDecodeError(c *Connect, err error) {
+    if h.onDecodeError == nil {
+        h.def.OnDecodeError(c, err)
+    } else {
+        h.onDecodeError(c, err)
+    }
+}
+func (h *regHandler) OnIdle(c *Connect) {
+    if h.onIdle == nil {
+        h.def.OnIdle(c)
+    } else {
+        h.onIdle(c)
+    }
+}
+
 type HandlerMaker func(c *net.TCPConn) Handler

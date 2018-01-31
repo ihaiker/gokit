@@ -16,7 +16,7 @@ func main() {
         AcceptTimeout:          100,
         IdleTime:               0,
     }
-    protocol := tcpKit.NewSimpleProtocol()
+    protocol := tcpKit.NewTVProtocol()
     protocol.Reg(pkg)
 
     logs.SetAllLevel(logs.DEBUG)

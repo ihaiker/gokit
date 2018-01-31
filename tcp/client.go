@@ -20,6 +20,17 @@ func NewClient(config *Config, handler Handler, protocol Protocol) *Client {
     return client
 }
 
+func NewClientWith(config *Config, wrapper *simpleWrapper) *Client {
+    client := &Client{}
+    client.config = config
+    client.logger = logs.Logger("tcpKit")
+    client.closeChan = make(chan struct{})
+    client.sendChan = make(chan interface{}, config.PacketSendChanLimit)
+    client.Handler = wrapper.handler
+    client.Protocol = wrapper.protocol
+    return client
+}
+
 func (c *Client) Start(conn *net.TCPConn) {
     c.connect = conn
     go c.Do(func(connect *Connect) {

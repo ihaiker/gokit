@@ -44,19 +44,19 @@ type Package interface {
     Decode(c io.Reader) (error)
 }
 
-type simpleProtocol struct {
+type regTVProtocol struct {
     reg map[int16]reflect.Type
 }
 
-func NewSimpleProtocol() *simpleProtocol {
-    return &simpleProtocol{reg: make(map[int16]reflect.Type)}
+func NewTVProtocol() *regTVProtocol {
+    return &regTVProtocol{reg: make(map[int16]reflect.Type)}
 }
 
-func (protocol *simpleProtocol) Reg(msg Package) {
+func (protocol *regTVProtocol) Reg(msg Package) {
     protocol.reg[msg.ID()] = reflect.TypeOf(msg)
 }
 
-func (protocol *simpleProtocol) Encode(msg interface{}) ([]byte, error) {
+func (protocol *regTVProtocol) Encode(msg interface{}) ([]byte, error) {
     if pkg, ok := msg.(Package); ok {
         if bs, err := pkg.Encode(); err != nil {
             return nil, err
@@ -74,7 +74,7 @@ func (protocol *simpleProtocol) Encode(msg interface{}) ([]byte, error) {
     return nil, ErrInvalidProtocol
 }
 
-func (protocol *simpleProtocol) Decode(c io.Reader) (interface{}, error) {
+func (protocol *regTVProtocol) Decode(c io.Reader) (interface{}, error) {
     var id int16
     if err := binary.Read(c, binary.BigEndian, &id); err != nil {
         return nil, err

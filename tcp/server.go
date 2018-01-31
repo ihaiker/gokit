@@ -6,6 +6,7 @@ import (
     "time"
     "github.com/ihaiker/gokit/commons/logs"
     "strings"
+    "io"
 )
 
 type Server struct {
@@ -50,7 +51,7 @@ func (s *Server) Start(listener *net.TCPListener) {
         if err != nil {
             if strings.Contains(err.Error(), "i/o timeout") {
 
-            }else{
+            } else {
                 s.logger.Errorf("服务监听错误：%s", err)
             }
             continue
@@ -99,4 +100,16 @@ func NewServer(config *Config, handlerMaker HandlerMaker, protocolMaker Protocol
         waitGroup: &sync.WaitGroup{},
         logger:    logs.Logger("tcpKit"),
     }
+}
+
+func NewServerWith(config *Config, wrapper *simpleWrapper) *Server {
+    return NewServer(
+        config,
+        func(c *net.TCPConn) Handler {
+            return wrapper.handler
+        },
+        func(c io.Reader) Protocol {
+            return wrapper.protocol
+        },
+    )
 }
