@@ -4,31 +4,30 @@ import (
     "github.com/ihaiker/gokit/commons/logs"
     "github.com/ihaiker/gokit/tcp"
     "github.com/ihaiker/gokit/runtime/signal"
+    "time"
+    "github.com/ihaiker/gokit/tcp/reg_demo/msg"
 )
 
-type TestClientHandlerWrapper struct {
-    tcpKit.HandlerWrapper
-}
-
-func (h *TestClientHandlerWrapper) OnConnect(c *tcpKit.Connect) {
-    h.HandlerWrapper.OnConnect(c)
-    logs.Info(c.Write("GGGGGG 测试结果是什么？"))
-}
 
 func main() {
+    pkg := &msg.Package2{}
     var config = &tcpKit.Config{
         PacketReceiveChanLimit: 10, PacketSendChanLimit: 10,
         AcceptTimeout:          100,
         IdleTime:               0,
     }
-    logs.SetAllLevel(logs.DEBUG)
-    s := tcpKit.NewClient(config, &TestClientHandlerWrapper{}, &tcpKit.LineProtocol{LineBreak: "\r\n"})
+    protocol := tcpKit.NewSimpleProtocol()
+    protocol.Reg(pkg)
 
+    logs.SetAllLevel(logs.DEBUG)
+    s := tcpKit.NewClient(config, &tcpKit.HandlerWrapper{}, protocol)
     go func() {
         if err := s.StartAt("127.0.0.1:6379"); err != nil {
             logs.Fatal("启动连接错误：", err)
         }
     }()
+    time.Sleep(time.Second)
+    s.Write(&msg.Package2{Msg: "IDLE"})
     defer s.Close()
 
     signalKit.Signal(func() {

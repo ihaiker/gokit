@@ -6,12 +6,15 @@ import (
     "github.com/ihaiker/gokit/commons/logs"
     "github.com/ihaiker/gokit/runtime/signal"
     "time"
+    "io"
 )
 
 var config = &tcpKit.Config{
     PacketReceiveChanLimit: 10, PacketSendChanLimit: 10,
-    AcceptTimeout:          3,
-    IdleTime:               1000,
+    AcceptTimeout:          time.Second,
+
+    IdleTime:    1000,
+    IdleTimeout: 2,
 }
 
 type TestHandlerWrapper struct {
@@ -22,7 +25,7 @@ func (h *TestHandlerWrapper) OnMessage(c *tcpKit.Connect, msg interface{}) {
     newMsg := time.Now().String()
     logs.Debugf("新消息：%s，回复：%s", msg, newMsg)
     if err := c.AsyncWrite(newMsg, time.Second); err != nil {
-        logs.Info("发送异常：",err)
+        logs.Info("发送异常：", err)
     }
 }
 
@@ -50,8 +53,8 @@ func makeHandler(c *net.TCPConn) tcpKit.Handler {
     return &TestHandlerWrapper{}
 }
 
-func makeProtocol(c *net.TCPConn) tcpKit.Protocol {
-    return &tcpKit.LineProtocol{Delim: "\r\n"}
+func makeProtocol(c io.Reader) tcpKit.Protocol {
+    return &tcpKit.LineProtocol{LineBreak: "\r\n"}
 }
 
 func main() {

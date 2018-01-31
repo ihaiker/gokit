@@ -35,7 +35,7 @@ func Catch(r interface{}) error {
     return e
 }
 
-func DCatch(r interface{}, err error) error{
+func DCatch(r interface{}, err error) error {
     if err != nil {
         return err
     }
@@ -59,6 +59,6 @@ func PanicIfPresent(err interface{}) {
 //如果不为空，使用msgpanic错误，
 func PanicMessageIfPresent(err interface{}, msg string) {
     if err != nil {
-        panic(errors.New(msg))
+        panic(errors.New(fmt.Sprintf(msg, err)))
     }
 }

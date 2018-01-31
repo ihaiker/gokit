@@ -49,9 +49,11 @@ func (s *Server) Start(listener *net.TCPListener) {
         conn, err := listener.AcceptTCP()
         if err != nil {
             if strings.Contains(err.Error(), "i/o timeout") {
-                continue
+
+            }else{
+                s.logger.Errorf("服务监听错误：%s", err)
             }
-            s.logger.Errorf("服务监听错误：%s", err)
+            continue
         }
         s.waitGroup.Add(1)
         go func() {

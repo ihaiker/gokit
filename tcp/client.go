@@ -22,7 +22,7 @@ func NewClient(config *Config, handler Handler, protocol Protocol) *Client {
 
 func (c *Client) Start(conn *net.TCPConn) {
     c.connect = conn
-    c.Do(func(connect *Connect) {
+    go c.Do(func(connect *Connect) {
 
     })
 }
