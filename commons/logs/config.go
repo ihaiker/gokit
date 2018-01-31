@@ -80,10 +80,10 @@ func _flag(logger string, cfg *config.Config) int {
                 flag = flag | log.Ldate
             case "time":
                 flag = flag | log.Ltime
-            case "longfile":
-                flag = flag | log.Llongfile
-            case "shortfile":
-                flag = flag | log.Lshortfile
+            //case "longfile":
+            //  flag = flag | log.Llongfile
+            //case "shortfile":
+            //    flag = flag | log.Lshortfile
             case "UTC":
                 flag = flag | log.LUTC
             case "microseconds":

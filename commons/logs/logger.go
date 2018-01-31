@@ -3,77 +3,71 @@ package logs
 import (
     "fmt"
     "os"
+    "runtime"
+    "path"
 )
 
 const _DEP int = 3
 
 func Debug(args ...interface{}) {
-    _log("root", DEBUG, args...)
+    _log(Logger("root"), DEBUG, fmt.Sprint(args...))
 }
 func Info(args ...interface{}) {
-    _log("root", INFO, args...)
+    _log(Logger("root"), INFO, fmt.Sprint(args...))
 }
 func Warn(args ...interface{}) {
-    _log("root", WARN, args...)
+    _log(Logger("root"), WARN, fmt.Sprint(args...))
 }
 func Error(args ...interface{}) {
-    _log("root", ERROR, args...)
+    _log(Logger("root"), ERROR, fmt.Sprint(args...))
 }
 func Fatal(args ...interface{}) {
-    _log("root", ERROR, args...)
+    _log(Logger("root"), ERROR, fmt.Sprint(args...))
     os.Exit(1)
 }
 func Debugf(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _log(Logger("root"), DEBUG, fmt.Sprintf(format, args...))
 }
 
 func Infof(format string, args ...interface{}) {
-    _logf("root", INFO, format, args...)
+    _log(Logger("root"), INFO, fmt.Sprintf(format, args...))
 }
 func Warnf(format string, args ...interface{}) {
-    _logf("root", WARN, format, args...)
+    _log(Logger("root"), WARN, fmt.Sprintf(format, args...))
 }
 func Errorf(format string, args ...interface{}) {
-    _logf("root", ERROR, format, args...)
+    _log(Logger("root"), ERROR, fmt.Sprintf(format, args...))
 }
 func Fatalf(format string, args ...interface{}) {
-    _logf("root", DEBUG, format, args...)
+    _log(Logger("root"), DEBUG, fmt.Sprintf(format, args...))
     os.Exit(1)
 }
-func _logf(loggerName string, level Level, format string, args ...interface{}) {
-    l, has := _loggers[loggerName]
-    if !has {
-        l = _loggers["root"]
+func getRuntimeInfo(dep int) string {
+    pc, fn, ln, ok := runtime.Caller(dep) // 3 steps up the stack frame
+    if !ok {
+        fn = "???"
+        ln = 0
     }
-    if l.level.PrintLevel(level) {
-        switch level {
-        case DEBUG:
-            l.debug_.Output(_DEP, fmt.Sprintf(format, args...))
-        case INFO:
-            l.info_.Output(_DEP, fmt.Sprintf(format, args...))
-        case WARN:
-            l.warn_.Output(_DEP, fmt.Sprintf(format, args...))
-        case ERROR:
-            l.error_.Output(_DEP, fmt.Sprintf(format, args...))
-        }
+    function := "???"
+    caller := runtime.FuncForPC(pc)
+    if caller != nil {
+        function = caller.Name()
     }
+    return fmt.Sprintf("%s/%s:%d %s()", path.Dir(function), path.Base(fn), ln, path.Base(function))
 }
 
-func _log(logger string, level Level, args ...interface{}) {
-    l, has := _loggers[logger]
-    if !has {
-        l = _loggers["root"]
-    }
-    if l.level.PrintLevel(level) {
+func _log(logger *LoggerEntry, level Level, out string) {
+    info := getRuntimeInfo(_DEP)
+    if logger.level.PrintLevel(level) {
         switch level {
         case DEBUG:
-            l.debug_.Output(_DEP, fmt.Sprint(args...))
+            logger.debug_.Output(_DEP, fmt.Sprint(info, out))
         case INFO:
-            l.info_.Output(_DEP, fmt.Sprint(args...))
+            logger.info_.Output(_DEP, fmt.Sprint(info, out))
         case WARN:
-            l.warn_.Output(_DEP, fmt.Sprint(args...))
+            logger.warn_.Output(_DEP, fmt.Sprint(info, out))
         case ERROR:
-            l.error_.Output(_DEP, fmt.Sprint(args...))
+            logger.error_.Output(_DEP, fmt.Sprint(info, out))
         }
     }
 }

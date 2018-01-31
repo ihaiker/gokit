@@ -50,9 +50,7 @@ const (
     WARN  Level = 2
     ERROR Level = 3
 
-    _LOG_FLAG int = log.LstdFlags | log.LUTC | log.Lshortfile
-
-    _L_DEP int = 2
+    _LOG_FLAG int = log.LstdFlags
 )
 
 type LoggerEntry struct {
@@ -66,52 +64,52 @@ type LoggerEntry struct {
 
 func (self *LoggerEntry) Debug(args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
-        self.debug_.Output(_L_DEP, fmt.Sprint(args...))
+        _log(self, DEBUG, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Info(args ...interface{}) {
     if self.level.PrintLevel(INFO) {
-        self.info_.Output(_L_DEP, fmt.Sprint(args...))
+        _log(self, INFO, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Warn(args ...interface{}) {
     if self.level.PrintLevel(WARN) {
-        self.warn_.Output(_L_DEP, fmt.Sprint(args...))
+        _log(self, WARN, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Error(args ...interface{}) {
     if self.level.PrintLevel(ERROR) {
-        self.error_.Output(_L_DEP, fmt.Sprint(args...))
+        _log(self, ERROR, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Print(args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
-        self.debug_.Output(_L_DEP, fmt.Sprint(args...))
+        _log(self, DEBUG, fmt.Sprint(args...))
     }
 }
 func (self *LoggerEntry) Println(args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
-        self.debug_.Output(_L_DEP, fmt.Sprint(args...))
+        _log(self, DEBUG, fmt.Sprint(args...))
     }
 }
 
 func (self *LoggerEntry) Debugf(format string, args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
-        self.debug_.Output(_L_DEP, fmt.Sprintf(format, args...))
+        _log(self, DEBUG, fmt.Sprintf(format, args...))
     }
 }
 func (self *LoggerEntry) Infof(format string, args ...interface{}) {
     if self.level.PrintLevel(INFO) {
-        self.info_.Output(_L_DEP, fmt.Sprintf(format, args...))
+        _log(self, INFO, fmt.Sprintf(format, args...))
     }
 }
 func (self *LoggerEntry) Warnf(format string, args ...interface{}) {
     if self.level.PrintLevel(WARN) {
-        self.warn_.Output(_L_DEP, fmt.Sprintf(format, args...))
+        _log(self, WARN, fmt.Sprintf(format, args...))
     }
 }
 func (self *LoggerEntry) Errorf(format string, args ...interface{}) {
     if self.level.PrintLevel(ERROR) {
-        self.error_.Output(_L_DEP, fmt.Sprintf(format, args...))
+        _log(self, ERROR, fmt.Sprintf(format, args...))
     }
 }
