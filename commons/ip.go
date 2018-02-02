@@ -2,13 +2,13 @@ package commonKit
 
 import (
     "net"
-    "github.com/ihaiker/gokit/commons/logs"
+    "log"
 )
 
 func GetHost(IgnoredInterfaces,PreferredNetworks []string) string {
     ifaces, err := net.Interfaces()
     if err != nil {
-        logs.Errorf("net interfaces error: %s", err.Error())
+        log.Printf("net interfaces error: %s", err.Error())
         return "0.0.0.0"
     }
     addresies := []string{}
