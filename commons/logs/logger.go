@@ -53,7 +53,7 @@ func getRuntimeInfo(dep int) string {
     if caller != nil {
         function = caller.Name()
     }
-    return fmt.Sprintf("%s%s/%s:%d %s%s ", colorUnderLine, path.Dir(function), path.Base(fn), ln, path.Base(function), colorOff)
+    return fmt.Sprintf("%s%s/%s%s:%d %s%s%s ", colorPath, path.Dir(function), path.Base(fn), colorOff, ln, colorClass, path.Base(function), colorOff)
 }
 
 func _log(logger *LoggerEntry, level Level, out string) {

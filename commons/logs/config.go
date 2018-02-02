@@ -25,12 +25,13 @@ root:
 
 var (
     colorOff   = "\033[0m"
-    colorDebug = "\033[1;29m"
-    colorError = "\033[1;31m"
-    colorWarn  = "\033[1;33m"
-    colorInfo  = "\033[1;34m"
+    colorDebug = "\033[0;29m"
+    colorInfo  = "\033[0;34m"
+    colorWarn  = "\033[0;33m"
+    colorError = "\033[0;31m"
 
-    colorUnderLine = "\033[4;2m"
+    colorPath = "\033[0;02m"
+    colorClass = "\033[0;94m"
 )
 
 //获取某个logger的级别
