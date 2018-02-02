@@ -12,6 +12,7 @@ import (
     "regexp"
     "log"
     "strings"
+    "fmt"
 )
 
 var _loggers map[string]*LoggerEntry
@@ -21,6 +22,16 @@ root:
     level: "info"
     appender: "console"
 `
+
+var (
+    colorOff   = "\033[0m"
+    colorDebug = "\033[1;29m"
+    colorError = "\033[1;31m"
+    colorWarn  = "\033[1;33m"
+    colorInfo  = "\033[1;34m"
+
+    colorUnderLine = "\033[4;2m"
+)
 
 //获取某个logger的级别
 func _level(logger string, cfg *config.Config) Level {
@@ -80,10 +91,10 @@ func _flag(logger string, cfg *config.Config) int {
                 flag = flag | log.Ldate
             case "time":
                 flag = flag | log.Ltime
-            //case "longfile":
-            //  flag = flag | log.Llongfile
-            //case "shortfile":
-            //    flag = flag | log.Lshortfile
+                //case "longfile":
+                //  flag = flag | log.Llongfile
+                //case "shortfile":
+                //    flag = flag | log.Lshortfile
             case "UTC":
                 flag = flag | log.LUTC
             case "microseconds":
@@ -144,10 +155,10 @@ func SetConfigWithContent(content string) (err error) {
             log.SetFlags(flag)
         }
 
-        logGroup.debug_ = log.New(appender, "[D] "+loggerName+" ", flag)
-        logGroup.info_ = log.New(appender, "[I] "+loggerName+" ", flag)
-        logGroup.warn_ = log.New(appender, "[W] "+loggerName+" ", flag)
-        logGroup.error_ = log.New(appender, "[E] "+loggerName+" ", flag)
+        logGroup.debug_ = log.New(appender, fmt.Sprintf("%s[DEBUG] %s%s ", colorDebug, loggerName, colorOff), flag)
+        logGroup.info_ = log.New(appender, fmt.Sprintf("%s[INFO] %s%s ", colorInfo, loggerName, colorOff), flag)
+        logGroup.warn_ = log.New(appender, fmt.Sprintf("%s[WARN] %s%s ", colorWarn, loggerName, colorOff), flag)
+        logGroup.error_ = log.New(appender, fmt.Sprintf("%s[ERROR] %s%s ", colorError, loggerName, colorOff), flag)
         _loggers[loggerName] = logGroup
     }
     config_logger("root")

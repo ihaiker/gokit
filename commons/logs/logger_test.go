@@ -4,6 +4,8 @@ import (
     "testing"
     "log"
     "path/filepath"
+    "fmt"
+    "github.com/fatih/color"
 )
 
 func init() {
@@ -42,4 +44,20 @@ func TestLoggerF(t *testing.T) {
     logger.Infof("console info %s.%d","f",2)
     logger.Warnf("console warn %s.%d","f",3)
     logger.Errorf("console error %s.%d","f",4)
+}
+
+func TestWarn(t *testing.T) {
+    yellow := color.New(color.FgYellow).SprintFunc()
+    red := color.New(color.FgRed).SprintFunc()
+    fmt.Printf("This is a %s and this is %s.\n", yellow("warning"), red("error"))
+
+    info := color.New(color.FgWhite, color.BgGreen).SprintFunc()
+    fmt.Printf("This %s rocks!\n", info("package"))
+
+    // Use helper functions
+    fmt.Println("This", color.RedString("warning"), "should be not neglected.")
+    fmt.Printf("%v %v\n", color.GreenString("Info:"), "an important message.")
+
+    // Windows supported too! Just don't forget to change the output to color.Output
+    fmt.Fprintf(color.Output, "Windows support: %s", color.GreenString("PASS"))
 }

@@ -53,7 +53,7 @@ func getRuntimeInfo(dep int) string {
     if caller != nil {
         function = caller.Name()
     }
-    return fmt.Sprintf("%s/%s:%d %s()", path.Dir(function), path.Base(fn), ln, path.Base(function))
+    return fmt.Sprintf("%s%s/%s:%d %s%s ", colorUnderLine, path.Dir(function), path.Base(fn), ln, path.Base(function), colorOff)
 }
 
 func _log(logger *LoggerEntry, level Level, out string) {
@@ -65,9 +65,9 @@ func _log(logger *LoggerEntry, level Level, out string) {
         case INFO:
             logger.info_.Output(_DEP, fmt.Sprint(info, out))
         case WARN:
-            logger.warn_.Output(_DEP, fmt.Sprint(info, out))
+            logger.warn_.Output(_DEP, fmt.Sprint(info, colorWarn, out, colorOff))
         case ERROR:
-            logger.error_.Output(_DEP, fmt.Sprint(info, out))
+            logger.error_.Output(_DEP, fmt.Sprint(info, colorError, out, colorOff))
         }
     }
 }
