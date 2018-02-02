@@ -115,7 +115,7 @@ func (c *Connect) writeLoop() {
         case msg := <-c.sendChan:
             if err := c.Write(msg); err != nil {
                 if err == ErrConnClosing {
-                    //TODO 已经读取出来的消息怎么转换问题
+                    c.sendChan <- msg //把取出来的消息放回去，但是顺序上可能存在了问题
                     return
                 } else {
                     c.Handler.OnEncodeError(c, msg, err)
