@@ -33,9 +33,13 @@ func NewClientWith(config *Config, wrapper *simpleWrapper) *Client {
 
 func (c *Client) Start(conn *net.TCPConn) {
     c.connect = conn
+    started := make(chan interface{})
     go c.Do(func(connect *Connect) {
 
+    }, func(connect *Connect) {
+        started <- 1
     })
+    <-started
 }
 
 func (s *Client) StartAt(addr string) error {

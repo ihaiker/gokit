@@ -22,3 +22,13 @@ func (cfg *Config) String() string {
     bs, _ := json.Marshal(cfg)
     return string(bs)
 }
+
+func DefaultTCPConfig() *Config {
+    return &Config{
+        PacketReceiveChanLimit: 10,
+        PacketSendChanLimit:    10,
+        AcceptTimeout:          time.Second,
+        IdleTime:               1000,
+        IdleTimeout:            3,
+    }
+}

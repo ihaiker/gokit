@@ -33,11 +33,13 @@ type Connect struct {
 
     logger *logs.LoggerEntry
 
+    unWriterMsg interface{} //未被发送出去的消息保存，
+
     Protocol
     Handler
 }
 
-func (c *Connect) Do(done func(connect *Connect)) {
+func (c *Connect) Do(done, connected func(connect *Connect)) {
     defer func() {
         c.Close()
         done(c)
@@ -48,6 +50,9 @@ func (c *Connect) Do(done func(connect *Connect)) {
         go c.syncDo(c.heartbeatLoop)
     }
     c.Handler.OnConnect(c)
+    if connected != nil {
+        connected(c)
+    }
     c.waitForStop()
 }
 
@@ -93,6 +98,12 @@ func (c *Connect) AsyncWrite(msg interface{}, timeout time.Duration) (err error)
 }
 
 func (c *Connect) PopUnSend(timeout time.Duration) (bytes interface{}) {
+    if c.unWriterMsg != nil {
+        ret := c.unWriterMsg
+        c.unWriterMsg = nil
+        return ret
+    }
+
     select {
     case bytes = <-c.sendChan:
         return
@@ -115,7 +126,8 @@ func (c *Connect) writeLoop() {
         case msg := <-c.sendChan:
             if err := c.Write(msg); err != nil {
                 if err == ErrConnClosing {
-                    c.sendChan <- msg //把取出来的消息放回去，但是顺序上可能存在了问题
+                    c.logger.Info("存在未能发送消息")
+                    c.unWriterMsg = c
                     return
                 } else {
                     c.Handler.OnEncodeError(c, msg, err)
@@ -213,16 +225,17 @@ func (c *Connect) IsClosed() bool {
 func (c *Connect) signClose() {
     if !c.IsClosed() {
         c.logger.Debugf("发送TCP关闭信息：%s", c.connect.RemoteAddr().String())
-        c.closeFlag.Set(1)
-        close(c.closeChan)
+        if c.closeFlag.CompareAndSet(0,1) {
+            close(c.closeChan)
+        }
     }
 }
 
 func (c *Connect) Close() {
     c.once.Do(func() {
+        c.signClose()
         c.logger.Debugf("关闭TCP连接[Start]：%s", c.connect.RemoteAddr().String())
         c.group.Add(1)
-        c.signClose()
         c.Handler.OnClose(c)
         close(c.sendChan)
         c.connect.Close()

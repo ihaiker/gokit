@@ -66,7 +66,7 @@ func (s *Server) Start(listener *net.TCPListener) {
                 s.logger.Debugf("客户端关闭连接：%s", addr)
                 delete(s.clients, addr)
                 s.waitGroup.Done()
-            })
+            }, nil)
         }()
     }
 }
