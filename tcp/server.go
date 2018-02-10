@@ -34,41 +34,43 @@ func (s *Server) StartAt(addr string) error {
 
 // Start starts service
 func (s *Server) Start(listener *net.TCPListener) {
-    s.waitGroup.Add(1)
-    defer func() {
-        listener.Close()
-        s.waitGroup.Done()
-    }()
-    s.logger.Debugf("TCP服务启动：%s", listener.Addr().String())
-    for {
-        select {
-        case <-s.exitChan:
-            return
-        default:
-        }
-        listener.SetDeadline(time.Now().Add(s.config.AcceptTimeout))
-        conn, err := listener.AcceptTCP()
-        if err != nil {
-            if strings.Contains(err.Error(), "i/o timeout") {
-
-            } else {
-                s.logger.Errorf("服务监听错误：%s", err)
-            }
-            continue
-        }
+    go func() {
         s.waitGroup.Add(1)
-        go func() {
-            addr := conn.RemoteAddr().String()
-            s.logger.Debugf("客户端连接服务器：%s", addr)
-            c := newConnect(s, conn)
-            s.clients[addr] = c
-            c.Do(func(c *Connect) {
-                s.logger.Debugf("客户端关闭连接：%s", addr)
-                delete(s.clients, addr)
-                s.waitGroup.Done()
-            }, nil)
+        defer func() {
+            listener.Close()
+            s.waitGroup.Done()
         }()
-    }
+        s.logger.Debugf("TCP服务启动：%s", listener.Addr().String())
+        for {
+            select {
+            case <-s.exitChan:
+                return
+            default:
+            }
+            listener.SetDeadline(time.Now().Add(s.config.AcceptTimeout))
+            conn, err := listener.AcceptTCP()
+            if err != nil {
+                if strings.Contains(err.Error(), "i/o timeout") {
+
+                } else {
+                    s.logger.Errorf("服务监听错误：%s", err)
+                }
+                continue
+            }
+            s.waitGroup.Add(1)
+            go func() {
+                addr := conn.RemoteAddr().String()
+                s.logger.Debugf("客户端连接服务器：%s", addr)
+                c := newConnect(s, conn)
+                s.clients[addr] = c
+                c.Do(func(c *Connect) {
+                    s.logger.Debugf("客户端关闭连接：%s", addr)
+                    delete(s.clients, addr)
+                    s.waitGroup.Done()
+                }, nil)
+            }()
+        }
+    }()
 }
 
 // Stop stops service

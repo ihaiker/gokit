@@ -61,7 +61,7 @@ func main() {
     logs.SetAllLevel(logs.DEBUG)
     s := tcpKit.NewServer(config, makeHandler, makeProtocol)
 
-    go s.StartAt("127.0.0.1:6379")
+    s.StartAt("127.0.0.1:6379")
     defer s.Stop()
 
     signalKit.Signal(func() {

@@ -62,6 +62,10 @@ type LoggerEntry struct {
     level Level
 }
 
+func (self *LoggerEntry) GetLevel() Level {
+    return self.level
+}
+
 func (self *LoggerEntry) Debug(args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
         _log(self, DEBUG, fmt.Sprint(args...))

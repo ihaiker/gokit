@@ -6,6 +6,7 @@ import (
     "github.com/ihaiker/gokit/runtime/signal"
     "time"
     "github.com/ihaiker/gokit/tcp/reg_demo/msg"
+    "fmt"
 )
 
 func main() {
@@ -21,8 +22,9 @@ func main() {
     reg.Reg(&msg.Package2{})
 
     s := tcpKit.NewServerWith(config, reg)
+    err := s.StartAt("127.0.0.1:6379")
+    fmt.Println(err)
 
-    go s.StartAt("127.0.0.1:6379")
     defer s.Stop()
 
     signalKit.Signal(func() {
