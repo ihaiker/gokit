@@ -42,6 +42,7 @@ func TestRegisterProtocol(t *testing.T) {
 
 func TestRegisterProtocols(t *testing.T) {
     r := NewTVProtocol()
+    r.Reg(&ACK{})
     shows(t, r,
         nil,
         "[abcde]",
@@ -68,23 +69,16 @@ func TestRegisterProtocols(t *testing.T) {
         int32(16),
         uint32(16),
 
-        int8(8))
+        int8(12),
+        NewACK(1, 1), )
 }
 
 func TestACK(t *testing.T) {
     r := NewTVProtocol()
-    ack := NewACK(1, 2, io.ErrClosedPipe)
-    ack.Result = NewACK(2, 3, nil)
+    ack := NewACK(1, 2)
+    ack.Result = NewErrorACK(2, io.EOF)
     r.Reg(ack)
     show(t, r, ack)
-}
-
-func TestPINGAndPONG(t *testing.T) {
-    r := NewTVProtocol()
-    r.Reg(PING)
-    r.Reg(PONG)
-    r.Reg(&ACK{})
-    shows(t, r, PING,PONG, NewACK(1,2,nil), PING, PONG)
 }
 
 func shows(t *testing.T, reg *regTVProtocol, msg ... interface{}) {
