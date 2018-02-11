@@ -183,7 +183,7 @@ func init() {
     if *log_config != "" {
         configFile = fileKit.New(*log_config)
         if !configFile.Exist() {
-            Fatal("日志文件不存在：", configFile.GetPath())
+            log.Fatal("日志文件不存在：", *log_config)
         }
     }
 
