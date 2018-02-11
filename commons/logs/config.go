@@ -13,6 +13,7 @@ import (
     "log"
     "strings"
     "fmt"
+    "github.com/spf13/pflag"
 )
 
 var _loggers map[string]*LoggerEntry
@@ -30,7 +31,7 @@ var (
     colorWarn  = "\033[0;33m"
     colorError = "\033[0;31m"
 
-    colorPath = "\033[0;02m"
+    colorPath  = "\033[0;02m"
     colorClass = "\033[0;94m"
 )
 
@@ -172,10 +173,22 @@ func SetConfigWithContent(content string) (err error) {
     return
 }
 
+var debug = pflag.Bool("debug", false, "use debug module")
+var log_config = pflag.String("logs-config", "", "the logs config file")
+
 func init() {
-    f := fileKit.New("./conf/logs.yaml")
-    if f.Exist() {
-        content, _ := f.ToString()
+    pflag.Parse()
+
+    configFile := fileKit.New("./conf/logs.yaml")
+    if *log_config != "" {
+        configFile = fileKit.New(*log_config)
+        if !configFile.Exist() {
+            Fatal("日志文件不存在：", configFile.GetPath())
+        }
+    }
+
+    if configFile.Exist() {
+        content, _ := configFile.ToString()
         if err := SetConfigWithContent(content); err != nil {
             log.Panic("set config :", err.Error())
         }
@@ -183,5 +196,9 @@ func init() {
         if err := SetConfigWithContent(""); err != nil {
             log.Panic("set config :", err.Error())
         }
+    }
+
+    if *debug {
+        SetAllLevel(DEBUG)
     }
 }
