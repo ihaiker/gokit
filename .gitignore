@@ -33,3 +33,5 @@ _testmain.go
 /TODO.md
 
 /main/mail
+
+.DS_Store
