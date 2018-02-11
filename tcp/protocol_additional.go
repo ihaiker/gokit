@@ -8,7 +8,37 @@ import (
     "encoding/binary"
 )
 
-const REGISTER_TYPE_ACK = REGISTER_TYPE_MAX + 1
+const (
+    REGISTER_TYPE_ACK = REGISTER_TYPE_MAX + 1 + iota
+    REGISTER_TYPE_PING
+    REGISTER_TYPE_PONG
+)
+
+type Idle uint16
+
+func (idle Idle) String() string {
+    if uint16(idle) == REGISTER_TYPE_PING {
+        return "PING"
+    }
+    return "PONG"
+}
+
+func (idle Idle) PID() uint16 {
+    return uint16(idle)
+}
+
+func (idle Idle) Encode(protocol Protocol) ([]byte, error) {
+    return []byte{}, nil
+}
+
+func (idle Idle) Decode(protocol Protocol,c io.Reader) (error) {
+    return nil
+}
+
+const (
+    PING Idle = Idle(REGISTER_TYPE_PING)
+    PONG Idle = Idle(REGISTER_TYPE_PONG)
+)
 
 type ACK struct {
     SendId, ACKID int64
@@ -52,7 +82,7 @@ func (ack *ACK) Decode(protocol Protocol, c io.Reader) (error) {
     }
     if errOut, err := protocol.Decode(c); err != nil {
         return err
-    } else if errOut != nil{
+    } else if errOut != nil {
         ack.Err = errOut.(error)
     }
     if ret, err := protocol.Decode(c); err != nil {

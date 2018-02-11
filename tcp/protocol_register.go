@@ -352,9 +352,15 @@ func (protocol *regTVProtocol) Decode(c io.Reader) (interface{}, error) {
 
     case REGISTER_TYPE_MAX:
         return nil, ErrInvalidProtocol
+
     default:
         if pkgType, ok := protocol.reg[typeId]; ok {
-            refType := reflect.New(pkgType.Elem())
+            var refType reflect.Value
+            if pkgType.Kind() == reflect.Ptr {
+                refType = reflect.New(pkgType.Elem())
+            }else{
+                refType = reflect.New(pkgType)
+            }
             out := refType.MethodByName("Decode").Call([]reflect.Value{reflect.ValueOf(protocol), reflect.ValueOf(c)})
             if out[0].IsNil() {
                 return refType.Interface(), nil
