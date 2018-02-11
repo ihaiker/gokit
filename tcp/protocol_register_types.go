@@ -1,7 +1,7 @@
 package tcpKit
 
 const (
-    REGISTER_TYPE_NIL int16 = iota
+    REGISTER_TYPE_NIL uint16 = iota
 
     REGISTER_TYPE_STRING
     REGISTER_TYPE_STRING_ARRAY

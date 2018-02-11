@@ -10,17 +10,17 @@ import (
 )
 
 type Package interface {
-    PID() int16
+    PID() uint16
     Encode() ([]byte, error)
     Decode(c io.Reader) (error)
 }
 
 type regTVProtocol struct {
-    reg map[int16]reflect.Type
+    reg map[uint16]reflect.Type
 }
 
 func NewTVProtocol() *regTVProtocol {
-    return &regTVProtocol{reg: make(map[int16]reflect.Type)}
+    return &regTVProtocol{reg: make(map[uint16]reflect.Type)}
 }
 
 func (protocol *regTVProtocol) Reg(msg Package) error {
@@ -32,7 +32,7 @@ func (protocol *regTVProtocol) Reg(msg Package) error {
     }
 }
 
-func (protocol *regTVProtocol) writeType(bsWriter *bytes.Buffer, t int16) {
+func (protocol *regTVProtocol) writeType(bsWriter *bytes.Buffer, t uint16) {
     err := binary.Write(bsWriter, binary.BigEndian, t)
     commonKit.IfPanic(err)
 }
@@ -178,7 +178,7 @@ func (protocol *regTVProtocol) Encode(msg interface{}) (bs []byte, err error) {
 }
 
 func (protocol *regTVProtocol) Decode(c io.Reader) (interface{}, error) {
-    var typeId int16
+    var typeId uint16
     if err := binary.Read(c, binary.BigEndian, &typeId); err != nil {
         return nil, err
     }
