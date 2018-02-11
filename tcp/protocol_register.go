@@ -11,8 +11,8 @@ import (
 
 type Package interface {
     PID() uint16
-    Encode() ([]byte, error)
-    Decode(c io.Reader) (error)
+    Encode(Protocol) ([]byte, error)
+    Decode(Protocol, io.Reader) (error)
 }
 
 type regTVProtocol struct {
@@ -142,25 +142,38 @@ func (protocol *regTVProtocol) Encode(msg interface{}) (bs []byte, err error) {
         commonKit.IfPanic(binary.Write(w, binary.BigEndian, uint8(len(msg.([]uint64)))))
         commonKit.IfPanic(binary.Write(w, binary.BigEndian, msg))
 
-    case int, *int:
+    case int:
         protocol.writeType(w, REGISTER_TYPE_INT)
-        commonKit.IfPanic(binary.Write(w, binary.BigEndian, msg))
+        commonKit.IfPanic(binary.Write(w, binary.BigEndian, int64(msg.(int))))
+    case *int:
+        protocol.writeType(w, REGISTER_TYPE_INT)
+        i := int64(*(msg.(*int)))
+        commonKit.IfPanic(binary.Write(w, binary.BigEndian, i))
     case []int:
         protocol.writeType(w, REGISTER_TYPE_INT_ARRAY)
-        commonKit.IfPanic(binary.Write(w, binary.BigEndian, uint8(len(msg.([]int)))))
-        commonKit.IfPanic(binary.Write(w, binary.BigEndian, msg))
-
-    case uint, *uint:
+        size := uint8(len(msg.([]int)))
+        commonKit.IfPanic(binary.Write(w, binary.BigEndian, size))
+        for i := uint8(0); i < size; i++ {
+            commonKit.IfPanic(binary.Write(w, binary.BigEndian, int64(msg.([]int)[i])))
+        }
+    case uint:
         protocol.writeType(w, REGISTER_TYPE_UINT)
-        commonKit.IfPanic(binary.Write(w, binary.BigEndian, msg))
+        commonKit.IfPanic(binary.Write(w, binary.BigEndian, uint64(msg.(uint))))
+    case *uint:
+        protocol.writeType(w, REGISTER_TYPE_UINT)
+        var i uint64 = uint64(*(msg.(*uint)))
+        commonKit.IfPanic(binary.Write(w, binary.BigEndian, i))
+
     case []uint:
         protocol.writeType(w, REGISTER_TYPE_UINT_ARRAY)
-        commonKit.IfPanic(binary.Write(w, binary.BigEndian, uint8(len(msg.([]uint)))))
-        commonKit.IfPanic(binary.Write(w, binary.BigEndian, msg))
-
+        size := uint8(len(msg.([]uint)))
+        commonKit.IfPanic(binary.Write(w, binary.BigEndian, size))
+        for i := uint8(0); i < size; i++ {
+            commonKit.IfPanic(binary.Write(w, binary.BigEndian, int64(msg.([]uint)[i])))
+        }
     default:
         if pkg, ok := msg.(Package); ok {
-            if bs, err := pkg.Encode(); err != nil {
+            if bs, err := pkg.Encode(protocol); err != nil {
                 return nil, err
             } else {
                 if err := binary.Write(w, binary.BigEndian, pkg.PID()); err != nil {
@@ -308,33 +321,41 @@ func (protocol *regTVProtocol) Decode(c io.Reader) (interface{}, error) {
         return p, nil
 
     case REGISTER_TYPE_INT:
-        var p int
+        var p int64
         commonKit.IfPanic(binary.Read(c, binary.BigEndian, &p))
-        return p, nil
+        return int(p), nil
     case REGISTER_TYPE_INT_ARRAY:
         var size uint8
         commonKit.IfPanic(binary.Read(c, binary.BigEndian, &size))
-        p := make([]int, size)
+        p := make([]int64, size)
         commonKit.IfPanic(binary.Read(c, binary.BigEndian, &p))
-        return p, nil
+        ret := make([]int,size)
+        for i,t := range p {
+            ret[i] = int(t)
+        }
+        return ret, nil
 
     case REGISTER_TYPE_UINT:
-        var p uint
+        var p uint64
         commonKit.IfPanic(binary.Read(c, binary.BigEndian, &p))
-        return p, nil
+        return uint(p), nil
     case REGISTER_TYPE_UINT_ARRAY:
         var size uint8
         commonKit.IfPanic(binary.Read(c, binary.BigEndian, &size))
-        p := make([]uint, size)
+        p := make([]uint64, size)
         commonKit.IfPanic(binary.Read(c, binary.BigEndian, &p))
-        return p, nil
+        ret := make([]uint,size)
+        for i,t := range p {
+            ret[i] = uint(t)
+        }
+        return ret, nil
 
     case REGISTER_TYPE_MAX:
         return nil, ErrInvalidProtocol
     default:
         if pkgType, ok := protocol.reg[typeId]; ok {
             refType := reflect.New(pkgType.Elem())
-            out := refType.MethodByName("Decode").Call([]reflect.Value{reflect.ValueOf(c)})
+            out := refType.MethodByName("Decode").Call([]reflect.Value{reflect.ValueOf(protocol), reflect.ValueOf(c)})
             if out[0].IsNil() {
                 return refType.Interface(), nil
             } else {

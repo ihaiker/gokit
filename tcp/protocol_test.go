@@ -55,28 +55,28 @@ func TestRegisterProtocols(t *testing.T) {
         []bool{true, true, false, true},
 
         int8(8),
-        []int8{4,-4},
+        []int8{4, -4},
         uint8(8),
-        []uint8{4,4},
+        []uint8{4, 4},
 
         int16(16),
-        []int16{8,-8},
+        []int16{8, -8},
         uint16(16),
-        []uint16{8,8},
+        []uint16{8, 8},
 
 
         int32(16),
         uint32(16),
 
         int8(8))
-
 }
 
-func TestType(t *testing.T) {
-    a := 1
-    t.Log(reflect.TypeOf(a))
-    t.Log(reflect.TypeOf(&a))
-    t.Log(&a)
+func TestACK(t *testing.T) {
+    r := NewTVProtocol()
+    ack := NewACK(1, 2, io.ErrClosedPipe)
+    ack.Result = NewACK(2,3,nil)
+    r.Reg(ack)
+    show(t,r, ack)
 }
 
 func shows(t *testing.T, reg *regTVProtocol, msg ... interface{}) {
