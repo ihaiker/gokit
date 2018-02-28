@@ -31,10 +31,10 @@ func TestSetConfig(t *testing.T) {
 
 func TestLogger(t *testing.T) {
     logger := Logger("console")
-    logger.Debug("console debug")
-    logger.Info("console info")
-    logger.Warn("console warn")
-    logger.Error("console error")
+    logger.Debug("console","debug")
+    logger.Info("console","info")
+    logger.Warn("console","warn")
+    logger.Error("console","error")
 }
 
 

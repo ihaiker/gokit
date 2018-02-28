@@ -68,32 +68,32 @@ func (self *LoggerEntry) GetLevel() Level {
 
 func (self *LoggerEntry) Debug(args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
-        _log(self, DEBUG, fmt.Sprint(args...))
+        _log(self, DEBUG, sprint(args...))
     }
 }
 func (self *LoggerEntry) Info(args ...interface{}) {
     if self.level.PrintLevel(INFO) {
-        _log(self, INFO, fmt.Sprint(args...))
+        _log(self, INFO, sprint(args...))
     }
 }
 func (self *LoggerEntry) Warn(args ...interface{}) {
     if self.level.PrintLevel(WARN) {
-        _log(self, WARN, fmt.Sprint(args...))
+        _log(self, WARN, sprint(args...))
     }
 }
 func (self *LoggerEntry) Error(args ...interface{}) {
     if self.level.PrintLevel(ERROR) {
-        _log(self, ERROR, fmt.Sprint(args...))
+        _log(self, ERROR, sprint(args...))
     }
 }
 func (self *LoggerEntry) Print(args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
-        _log(self, DEBUG, fmt.Sprint(args...))
+        _log(self, DEBUG, sprint(args...))
     }
 }
 func (self *LoggerEntry) Println(args ...interface{}) {
     if self.level.PrintLevel(DEBUG) {
-        _log(self, DEBUG, fmt.Sprint(args...))
+        _log(self, DEBUG, sprint(args...))
     }
 }
 

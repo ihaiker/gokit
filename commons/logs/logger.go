@@ -5,24 +5,36 @@ import (
     "os"
     "runtime"
     "path"
+    "bytes"
 )
 
 const _DEP int = 3
 
+func sprint(args ...interface{}) string {
+    bs := new(bytes.Buffer)
+    for i, arg := range args {
+        if i != 0 {
+            bs.WriteString(" ")
+        }
+        fmt.Fprintf(bs, "%v", arg)
+    }
+    return bs.String()
+}
+
 func Debug(args ...interface{}) {
-    _log(Logger("root"), DEBUG, fmt.Sprint(args...))
+    _log(Logger("root"), DEBUG, sprint(args...))
 }
 func Info(args ...interface{}) {
-    _log(Logger("root"), INFO, fmt.Sprint(args...))
+    _log(Logger("root"), INFO, sprint(args...))
 }
 func Warn(args ...interface{}) {
-    _log(Logger("root"), WARN, fmt.Sprint(args...))
+    _log(Logger("root"), WARN, sprint(args...))
 }
 func Error(args ...interface{}) {
-    _log(Logger("root"), ERROR, fmt.Sprint(args...))
+    _log(Logger("root"), ERROR, sprint(args...))
 }
 func Fatal(args ...interface{}) {
-    _log(Logger("root"), ERROR, fmt.Sprint(args...))
+    _log(Logger("root"), ERROR, sprint(args...))
     os.Exit(1)
 }
 func Debugf(format string, args ...interface{}) {
