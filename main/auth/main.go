@@ -9,60 +9,68 @@ import (
     "fmt"
     "sync"
     "github.com/ihaiker/gokit/files"
-    "strings"
     "time"
-    "github.com/spf13/pflag"
+    "flag"
+    "encoding/json"
+    "strings"
+    "net"
+    "os"
 )
 
-var port = pflag.Int("p", 8192, "the server port")
-var config_path = pflag.String("f", "./passwords", "the passwords config file")
-var period = pflag.Int("q", 30, "the secounds period to reload config file.")
+var port = flag.Int("p", 8193, "the server port")
+var config_path = flag.String("f", "./passwords.json", "the passwords config file")
+var period = flag.Int("q", 30, "the secounds period to reload config file.")
 
 type Password struct {
-    Name      string
-    AssertKey string
-    Password  string
+    Name      string   `json:"name"`
+    AssertKey string   `json:"assert_key"`
+    Password  string   `json:"password"`
+    AllowIPS  []string `json:"allow_ips"`
 }
 
 func (p *Password) ToString() string {
-    return fmt.Sprintf("%s,%s,%s", p.Name, p.Password, p.AssertKey)
+    return fmt.Sprintf("%s,%s,%s,%s", p.Name, p.Password, p.AssertKey, strings.Join(p.AllowIPS, ";"))
 }
 
 type config struct {
-    passwords []*Password
-    rwLock    *sync.RWMutex
-    closeChan chan interface{}
-    cfgPath   string
+    passwords  []*Password
+    rwLock     *sync.RWMutex
+    closeChan  chan interface{}
+    cfgPath    string
+    lastReload int64
 }
 
 func newConfig(cfgPath string) (*config, error) {
     cfg := &config{}
     cfg.cfgPath = cfgPath
     cfg.rwLock = &sync.RWMutex{}
+    cfg.closeChan = make(chan interface{})
     cfg.reload()
     return cfg, nil
 }
 func (cfg *config) reload() {
-    logs.Debug("reload config file!")
     cfg.rwLock.Lock()
     defer cfg.rwLock.Unlock()
 
-    cfg.passwords = []*Password{}
     if f := fileKit.New(cfg.cfgPath); f.Exist() {
-        if it, err := f.LineIterator(); err == nil {
-            for ; it.HasNext(); {
-                line := it.Next().([]byte)
-                lineSplits := strings.SplitN(string(line), ",", 3)
-                cfg.passwords = append(cfg.passwords, &Password{
-                    Name:      lineSplits[0],
-                    Password:  lineSplits[1],
-                    AssertKey: lineSplits[2],
-                })
-                logs.Debug("加载配置：",string(line))
+        fs, _ := os.Stat(f.GetPath())
+        lastReload := fs.ModTime().UnixNano()
+        if lastReload > cfg.lastReload {
+            logs.Debug("reload config file!")
+            cfg.passwords = []*Password{}
+            if bytes, err := f.ToBytes(); err != nil {
+                logs.Error("读取文件错误：", err.Error())
+            } else if err = json.Unmarshal(bytes, &cfg.passwords); err != nil {
+                logs.Error("文件内容错误：", err.Error())
+            } else {
+                for e := range cfg.passwords {
+                    logs.Info("配置：", cfg.passwords[e].ToString())
+                }
             }
         } else {
-            logs.Debug("读取配置文件错误:", err)
+            logs.Debug("config file not modify")
         }
+        cfg.lastReload = lastReload
     } else {
         logs.Info("配置文件未找到！", cfg.cfgPath)
     }
@@ -106,12 +114,36 @@ func (th *timeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     if name == "" {
         w.WriteHeader(http.StatusBadRequest)
     } else if pw, has := th.cfg.host(name); ! has {
+        logs.Info("未发现：", name)
         w.WriteHeader(http.StatusNotFound)
     } else if pw.AssertKey != "" && r.URL.Query().Get("ak") != pw.AssertKey {
+        logs.Info("AK错误：", name, " ak:", r.URL.Query().Get("ak"))
+        w.WriteHeader(http.StatusUnauthorized)
+    } else if !th.isAllowIP(pw.AllowIPS, r) {
         w.WriteHeader(http.StatusUnauthorized)
     } else {
         w.Write([]byte(pw.Password))
     }
+}
+
+func (th *timeHandler) isAllowIP(ipPattern []string, r *http.Request) bool {
+    ip, _, err := net.SplitHostPort(r.RemoteAddr)
+    if err != nil {
+        logs.Info("获取用户IP错误：", err.Error())
+        return false
+    } else {
+        proxyIp := r.Header.Get("X-Forwarded-For")
+        if (proxyIp != "") {
+            ip = proxyIp
+        }
+        for _, v := range ipPattern {
+            if v == ip {
+                return true
+            }
+        }
+    }
+    logs.Info("非法访问：", ip)
+    return false
 }
 
 func main() {
@@ -119,7 +151,9 @@ func main() {
         logs.Error("读取配置文件错误：", err)
     } else {
         cfg.loop()
-        http.ListenAndServe(fmt.Sprintf(":%d", *port), &timeHandler{cfg: cfg})
+        if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), &timeHandler{cfg: cfg}); err != nil {
+            logs.Error("启动错误：", err)
+        }
         cfg.close()
     }
 }
