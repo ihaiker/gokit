@@ -225,7 +225,7 @@ func (c *Connect) IsClosed() bool {
 func (c *Connect) signClose() {
     if !c.IsClosed() {
         c.logger.Debugf("发送TCP关闭信息：%s", c.connect.RemoteAddr().String())
-        if c.closeFlag.CompareAndSet(0,1) {
+        if c.closeFlag.CompareAndSet(0, 1) {
             close(c.closeChan)
         }
     }
@@ -243,6 +243,10 @@ func (c *Connect) Close() {
         c.logger.Debugf("关闭TCP连接[End]：%s", c.connect.RemoteAddr().String())
     })
     c.group.Wait()
+}
+
+func (c *Connect) GetConnect() *net.TCPConn {
+    return c.connect;
 }
 
 func (c *Connect) syncDo(fn func()) {

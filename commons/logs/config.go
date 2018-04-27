@@ -13,7 +13,6 @@ import (
     "log"
     "strings"
     "fmt"
-    "github.com/spf13/pflag"
 )
 
 var _loggers map[string]*LoggerEntry
@@ -173,17 +172,34 @@ func SetConfigWithContent(content string) (err error) {
     return
 }
 
-var debug = pflag.Bool("debug", false, "use debug module")
-var log_config = pflag.String("logs-config", "", "the logs config file")
+func findArgs(name string, hasValue bool) interface{} {
+    for k, v := range os.Args[1:] {
+        if v == name {
+            if hasValue {
+                if len(os.Args) > k+2 {
+                    return os.Args[k+2]
+                }
+            } else {
+                return true
+            }
+        }
+    }
+    if hasValue {
+        return ""
+    } else {
+        return false
+    }
+}
 
 func init() {
-    pflag.Parse()
+    debug := findArgs("--debug", false).(bool)
+    log_config := findArgs("--logs-config", true).(string)
 
     configFile := fileKit.New("./conf/logs.yaml")
-    if *log_config != "" {
-        configFile = fileKit.New(*log_config)
+    if log_config != "" {
+        configFile = fileKit.New(log_config)
         if !configFile.Exist() {
-            log.Fatal("日志文件不存在：", *log_config)
+            log.Fatal("日志文件不存在：", log_config)
         }
     }
 
@@ -198,7 +214,7 @@ func init() {
         }
     }
 
-    if *debug {
+    if debug {
         SetAllLevel(DEBUG)
     }
 }
