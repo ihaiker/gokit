@@ -81,7 +81,7 @@ func (ack *ACK) Decode(protocol Protocol, c io.Reader) (error) {
     eStr := ReadString(c)
     if eStr == "" {
 
-    }else{
+    } else {
         ack.Err = errors.New(eStr)
     }
 
@@ -98,4 +98,32 @@ func NewACK(sendId int64, ret interface{}) *ACK {
 }
 func NewErrorACK(sendId int64, err error) *ACK {
     return &ACK{SendId: sendId, Err: err}
+}
+
+//
+//用户认证消息
+type IDWapper struct {
+    SendId int64 //认证消息发送ID
+}
+
+func (self *IDWapper) Encode(p Protocol) ([]byte, error) {
+    w := new(bytes.Buffer)
+    commonKit.IfPanic(binary.Write(w, binary.BigEndian, self.SendId))
+    if err := self.EncodeEntry(p, w); err != nil {
+        return nil, err
+    }
+    return w.Bytes(), nil
+}
+
+func (self *IDWapper) EncodeEntry(p Protocol, buf *bytes.Buffer) error {
+    return nil
+}
+
+func (evt *IDWapper) Decode(p Protocol, c io.Reader) error {
+    commonKit.IfPanic(binary.Read(c, binary.BigEndian, &evt.SendId))
+    return evt.DecodeEntry(p, c)
+}
+
+func (evt *IDWapper) DecodeEntry(p Protocol, c io.Reader) error {
+    return nil
 }
