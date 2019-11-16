@@ -1,9 +1,9 @@
 package main
 
 import (
-    "github.com/ihaiker/gokit/commons/logs"
-    "github.com/ihaiker/gokit/tcp"
-    "github.com/ihaiker/gokit/runtime/signal"
+	"github.com/ihaiker/gokit/logs"
+	"github.com/ihaiker/gokit/runtime/signal"
+	"github.com/ihaiker/gokit/tcp"
 )
 
 type TestClientHandlerWrapper struct {
@@ -21,7 +21,7 @@ func main() {
         AcceptTimeout:          100,
         IdleTime:               0,
     }
-    logs.SetAllLevel(logs.DEBUG)
+    logs.SetDebugMode(true)
     s := tcpKit.NewClient(config, &TestClientHandlerWrapper{}, &tcpKit.LineProtocol{LineBreak: "\r\n"})
 
     go func() {

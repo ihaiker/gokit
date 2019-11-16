@@ -1,11 +1,11 @@
 package main
 
 import (
-    "github.com/ihaiker/gokit/commons/logs"
-    "github.com/ihaiker/gokit/tcp"
-    "github.com/ihaiker/gokit/runtime/signal"
-    "time"
-    "github.com/ihaiker/gokit/tcp/reg_demo/msg"
+	"github.com/ihaiker/gokit/logs"
+	"github.com/ihaiker/gokit/runtime/signal"
+	"github.com/ihaiker/gokit/tcp"
+	"github.com/ihaiker/gokit/tcp/reg_demo/msg"
+	"time"
 )
 
 
@@ -19,7 +19,6 @@ func main() {
     protocol := tcpKit.NewTVProtocol()
     protocol.Reg(pkg)
 
-    logs.SetAllLevel(logs.DEBUG)
     s := tcpKit.NewClient(config, &tcpKit.HandlerWrapper{}, protocol)
     go func() {
         if err := s.StartAt("127.0.0.1:6379"); err != nil {

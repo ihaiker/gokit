@@ -3,9 +3,9 @@ package signalKit
 import (
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
-    "github.com/ihaiker/gokit/commons/logs"
-    "path/filepath"
+	"github.com/ihaiker/gokit/logs"
 )
 
 // InitSignal register signals handler.

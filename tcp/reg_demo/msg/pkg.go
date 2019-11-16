@@ -1,15 +1,15 @@
 package msg
 
 import (
-    "io"
-    "github.com/ihaiker/gokit/commons/logs"
+	"github.com/ihaiker/gokit/logs"
+	"io"
 )
 
 type Package2 struct {
     Msg string
 }
 
-func (p *Package2) ID() int16 {
+func (p *Package2) PID() uint16 {
     return 1
 }
 func (p *Package2) Encode() ([]byte, error) {

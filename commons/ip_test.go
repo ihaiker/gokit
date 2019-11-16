@@ -1,4 +1,4 @@
-package commonKit
+package commons
 
 import "testing"
 

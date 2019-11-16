@@ -57,7 +57,7 @@ func (ack *ACK) PID() uint16 {
 
 func (ack *ACK) Encode(protocol Protocol) ([]byte, error) {
     buffer := new(bytes.Buffer)
-    commonKit.IfPanic(binary.Write(buffer, binary.BigEndian, ack.SendId))
+    commons.PanicIfPresent(binary.Write(buffer, binary.BigEndian, ack.SendId))
 
     //error
     if ack.Err == nil {
@@ -68,9 +68,9 @@ func (ack *ACK) Encode(protocol Protocol) ([]byte, error) {
 
     //result
     bs, err := protocol.Encode(ack.Result)
-    commonKit.IfPanic(err)
+    commons.PanicIfPresent(err)
     _, err = buffer.Write(bs)
-    commonKit.IfPanic(err)
+    commons.PanicIfPresent(err)
 
     return buffer.Bytes(), nil
 }
@@ -108,7 +108,7 @@ type IDWapper struct {
 
 func (self *IDWapper) Encode(p Protocol) ([]byte, error) {
     w := new(bytes.Buffer)
-    commonKit.IfPanic(binary.Write(w, binary.BigEndian, self.SendId))
+    commons.PanicIfPresent(binary.Write(w, binary.BigEndian, self.SendId))
     if err := self.EncodeEntry(p, w); err != nil {
         return nil, err
     }
@@ -120,7 +120,7 @@ func (self *IDWapper) EncodeEntry(p Protocol, buf *bytes.Buffer) error {
 }
 
 func (evt *IDWapper) Decode(p Protocol, c io.Reader) error {
-    commonKit.IfPanic(binary.Read(c, binary.BigEndian, &evt.SendId))
+    commons.PanicIfPresent(binary.Read(c, binary.BigEndian, &evt.SendId))
     return evt.DecodeEntry(p, c)
 }
 

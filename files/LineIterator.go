@@ -6,14 +6,14 @@ import (
 	"os"
 )
 
-type LineIterator struct {
-	commonKit.CloseIterator
+type lineIterator struct {
+	commons.CloseIterator
 	reader  *bufio.Reader
 	file    *os.File
 	current []byte
 }
 
-func (self *LineIterator) HasNext() bool {
+func (self *lineIterator) HasNext() bool {
 	line, _, err := self.reader.ReadLine()
 	if err != nil {
 		self.current = nil
@@ -23,21 +23,20 @@ func (self *LineIterator) HasNext() bool {
 	return true
 }
 
-func (self *LineIterator) Next() interface{} {
+func (self *lineIterator) Next() interface{} {
 	defer func() {
 		self.current = nil
 	}()
 	return self.current
 }
 
-func (self *LineIterator) Close() error {
+func (self *lineIterator) Close() error {
 	return self.file.Close()
 }
 
-func newIterator(file *os.File) commonKit.CloseIterator {
-	return &LineIterator{
-		file:file,
-		reader:bufio.NewReader(file),
+func newIterator(file *os.File) commons.CloseIterator {
+	return &lineIterator{
+		file:   file,
+		reader: bufio.NewReader(file),
 	}
 }
-

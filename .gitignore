@@ -29,9 +29,9 @@ _testmain.go
 /tmp
 /tmp/*
 /test.go
-/lldb/data
-/TODO.md
+/collections/lldb/data
+/README.md
 
-/main/mail
+/main
 
 .DS_Store

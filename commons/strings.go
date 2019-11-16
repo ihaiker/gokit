@@ -1,4 +1,4 @@
-package commonKit
+package commons
 
 import "io"
 func Switch(check, other interface{}) interface{} {

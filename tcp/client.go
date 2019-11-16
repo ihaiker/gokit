@@ -1,8 +1,8 @@
 package tcpKit
 
 import (
-    "github.com/ihaiker/gokit/commons/logs"
-    "net"
+	"github.com/ihaiker/gokit/logs"
+	"net"
 )
 
 type Client struct {
@@ -12,7 +12,7 @@ type Client struct {
 func NewClient(config *Config, handler Handler, protocol Protocol) *Client {
     client := &Client{}
     client.config = config
-    client.logger = logs.Logger("tcpKit")
+    client.logger = logs.GetLogger("tcp")
     client.closeChan = make(chan struct{})
     client.sendChan = make(chan interface{}, config.PacketSendChanLimit)
     client.Handler = handler
@@ -23,7 +23,7 @@ func NewClient(config *Config, handler Handler, protocol Protocol) *Client {
 func NewClientWith(config *Config, wrapper *simpleWrapper) *Client {
     client := &Client{}
     client.config = config
-    client.logger = logs.Logger("tcpKit")
+    client.logger = logs.GetLogger("tcp")
     client.closeChan = make(chan struct{})
     client.sendChan = make(chan interface{}, config.PacketSendChanLimit)
     client.Handler = wrapper.handler

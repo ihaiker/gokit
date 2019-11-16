@@ -1,4 +1,4 @@
-package commonKit
+package commons
 
 import (
     "errors"
@@ -29,7 +29,7 @@ func Catch(r interface{}) error {
         } else if er, ok := r.(string); ok {
             e = errors.New(er)
         } else {
-            e = errors.New(fmt.Sprintf("%s", r))
+            e = errors.New(fmt.Sprintf("%v", r))
         }
     }
     return e
@@ -40,13 +40,6 @@ func DCatch(r interface{}, err error) error {
         return err
     }
     return Catch(r)
-}
-
-//如果不为空panic错误
-func IfPanic(err interface{}) {
-    if err != nil {
-        panic(err)
-    }
 }
 
 //如果不为空panic错误

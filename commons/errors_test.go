@@ -1,8 +1,9 @@
-package commonKit
+package commons
 
 import (
-    "testing"
+    "errors"
     "fmt"
+    "testing"
 )
 
 func TestTry(t *testing.T) {
@@ -33,6 +34,8 @@ func TestCatch(t *testing.T) {
 func TestDCatch(t *testing.T) {
     testCatch := func() (err error) {
         defer func() { err = DCatch(recover(), err) }()
+
+        err = errors.New("test")
 
         i := 1
         j := 1

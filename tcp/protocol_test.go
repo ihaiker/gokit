@@ -104,3 +104,7 @@ func show(t *testing.T, reg *regTVProtocol, msg interface{}) {
     assert.NilError(t, err)
     t.Log(reflect.TypeOf(msg), msg, ret)
 }
+
+func TestName(t *testing.T) {
+
+}

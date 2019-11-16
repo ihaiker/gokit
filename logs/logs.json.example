@@ -1,0 +1,24 @@
+{
+	"root": {
+		"level": "debug",
+		"appender": "stdout",
+		"pattern": "%d{2006-01-02} %f:%l %F %m"
+	},
+	"loggers": {
+		"ctl": {
+			"level": "info",
+			"appender": "file://tmp/stdout.log.{2006-01-02}",
+			"pattern": "[%L] %d{2006-01-02 15:04:05} %f:%l %F %m"
+		},
+		"sock": {
+			"level": "info",
+			"appender": "sock://192.168.1.236:55",
+			"pattern": "[%L] %d{2006-01-02 15:04:05} %f:%l %F %m"
+		},
+		"sock2": {
+			"level": "info",
+			"appender": "sock://tmp/logs.sock",
+			"pattern": "[%L] %d{2006-01-02 15:04:05} %F():%l %m"
+		}
+	}
+}
