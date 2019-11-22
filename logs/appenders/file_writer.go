@@ -38,7 +38,7 @@ func (self *dailyRollingFile) Close() error {
 
 //创建每日回滚日志的文件夹
 func _create_file_dir(logDir string) error {
-	if fileKit.NotExist(logDir) {
+	if files.NotExist(logDir) {
 		if err := os.MkdirAll(logDir, os.ModeDir); err != nil {
 			return errors.New("can mkdir " + logDir + " " + err.Error())
 		}

@@ -1,4 +1,4 @@
-package fileKit
+package files
 
 import (
 	"errors"

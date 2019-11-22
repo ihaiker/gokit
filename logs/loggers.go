@@ -55,6 +55,11 @@ func CloseAll() {
 	}
 }
 
+func SetNamedLevel(name string, level Level) {
+	logger := GetLogger(name)
+	logger.(ConfigLogger).SetLevel(level)
+}
+
 func SetDebugMode(setDebug bool) {
 	debug = setDebug
 }

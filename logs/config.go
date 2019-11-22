@@ -27,9 +27,15 @@ func loadConfig(appName string) (loggerConfiger *loggerConfig, err error) {
 			Pattern:  DEFAULT_PATTERN,
 		},
 	}
-	if err = config.NewConfigRegister(appName, "logs").With(&configor.Config{
-		ENVPrefix: strings.ToUpper(appName) + "_LOG",
-	}).Marshal(loggerConfiger); err != nil {
+	err = config.NewConfigRegister(appName, "logs").
+		With(&configor.Config{ENVPrefix: strings.ToUpper(appName) + "_LOG"}).Marshal(loggerConfiger)
+
+	//忽略配置没有找到错误
+	if err == config.ErrConfigNotFound {
+		err = nil
+	}
+
+	if err != nil {
 		return
 	}
 	return

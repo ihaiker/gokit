@@ -6,7 +6,7 @@ type AtomicUint struct {
 	value uint32
 }
 
-func NewAtomicUuint(initValue int) *AtomicUint {
+func NewAtomicUint(initValue int) *AtomicUint {
 	return &AtomicUint{value: uint32(initValue)}
 }
 

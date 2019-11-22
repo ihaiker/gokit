@@ -1,8 +1,13 @@
 package config
 
 import (
-	fileKit "github.com/ihaiker/gokit/files"
+	"errors"
+	"github.com/ihaiker/gokit/files"
 	"github.com/jinzhu/configor"
+)
+
+var (
+	ErrConfigNotFound = errors.New("the config not found!")
 )
 
 type register struct {
@@ -25,7 +30,7 @@ func NewConfigRegister(name, module string) *register {
 	for _, ext := range extends {
 		paths := GetStandardConfigurationLocation(name, module, ext)
 		for _, path := range paths {
-			if fileKit.IsExistFile(path) {
+			if files.IsExistFile(path) {
 				reg.AddPath(path)
 			}
 		}
@@ -52,5 +57,8 @@ func (this *register) AddPath(path ...string) *register {
 }
 
 func (this *register) Marshal(cfg interface{}) error {
+	if len(this.path) == 0 {
+		return ErrConfigNotFound
+	}
 	return configor.New(this.config).Load(cfg, this.path...)
 }

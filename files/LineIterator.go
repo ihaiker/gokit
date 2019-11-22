@@ -1,4 +1,4 @@
-package fileKit
+package files
 
 import (
 	"github.com/ihaiker/gokit/commons"

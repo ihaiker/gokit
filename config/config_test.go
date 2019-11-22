@@ -19,12 +19,12 @@ type UserInfo struct {
 
 func TestRegister(t *testing.T) {
 	u := new(UserInfo)
-	cfg := NewConfigRegister("test", "")
+	cfg := NewConfigRegister("testq", "testq")
 	err := cfg.Marshal(u)
 	if err != nil {
-		t.Log(err)
+		t.Fatal(err)
 	}
 	t.Log("name: ", u.Name)
 	t.Log("address.info:", u.Address.Info);
-	t.Log("address.code", u.Address.Code)
+	t.Log("address.code:", u.Address.Code)
 }

@@ -1,4 +1,4 @@
-package fileKit
+package files
 
 import "os"
 import (
@@ -32,7 +32,7 @@ func IsDir(filename string) bool {
 
 func IsExistFile(filename string) bool {
 	fs, err := os.Stat(filename)
-	
+
 	if err == nil || os.IsExist(err) {
 		return ! fs.IsDir()
 	} else {
