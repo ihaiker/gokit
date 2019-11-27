@@ -1,0 +1,65 @@
+package rpc
+
+import (
+	"github.com/ihaiker/gokit/commons"
+	"github.com/ihaiker/gokit/remoting"
+	"github.com/ihaiker/gokit/remoting/coder/tlv"
+	"github.com/ihaiker/gokit/remoting/handler"
+)
+
+type OnMessage func(channel remoting.Channel, request *Request) *Response
+type OnResponse func(response *Response)
+
+func makeHandlerMaker(onMessage OnMessage, onResponse OnResponse) remoting.HandlerMaker {
+	return func(channel remoting.Channel) remoting.Handler {
+		return newHandler(onMessage, onResponse)
+	}
+}
+
+func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
+	ping := new(Ping)
+	pong := new(Pong)
+	reg := handler.Reg()
+	reg.WithOnIdle(func(ch remoting.Channel) {
+		logger.Debug("write ping to:", ch.GetRemoteAddress())
+		_ = ch.Write(ping)
+	}).WithOnDecodeError(func(ch remoting.Channel, err error) {
+		logger.Debug("decoder on:", ch.GetRemoteAddress(), ", error:", err)
+		ch.Close()
+	}).WithOnEncodeError(func(ch remoting.Channel, msg interface{}, err error) {
+		logger.Debug("encode on:", ch.GetRemoteAddress(), ", error:", err)
+		ch.Close()
+	}).WithOnError(func(ch remoting.Channel, msg interface{}, err error) {
+		logger.Debug("error on:", ch.GetRemoteAddress(), ", error:", err)
+		ch.Close()
+	}).WithOnMessage(func(ch remoting.Channel, msg interface{}) {
+		pkg := msg.(tlv.Message)
+		switch pkg.TypeID() {
+		case PING:
+			_ = ch.Write(pong)
+		case PONG:
+			//do nothing
+		case REQUEST:
+			req := msg.(*Request)
+			logger.Debug("request: ", req.URL, ", ch:", ch.GetRemoteAddress())
+			commons.Try(func() {
+				resp := onMessage(ch, req)
+				if err := ch.Write(resp); err != nil {
+					logger.Errorf("write response %s error: %s", req.URL, err)
+				}
+			}, func(e error) {
+				logger.Errorf("dealwith request(%s) error: %s", req.URL, e)
+				resp := new(Response)
+				resp.id = msg.(*Request).id
+				resp.Error = ErrSystemError
+				if err := ch.Write(resp); err != nil {
+					logger.Errorf("write response %s error: %s", req.URL, err)
+				}
+			})
+		case RESPONSE:
+			logger.Debug("response: ", msg.(*Response).id, ", ch:", ch.GetRemoteAddress())
+			onResponse(msg.(*Response))
+		}
+	})
+	return reg
+}

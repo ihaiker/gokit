@@ -34,5 +34,6 @@ func DefaultTCPConfig() *Config {
 		AsynHandlerGroup: 100,
 		IdleDuration:     3,
 		IdleTimeout:      3,
+		WriteBufferSize:  16,
 	}
 }

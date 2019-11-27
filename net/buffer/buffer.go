@@ -3,6 +3,7 @@ package buffer
 import (
 	"bytes"
 	"encoding/binary"
+	"io"
 	"math"
 	"errors"
 )
@@ -11,11 +12,12 @@ import (
 type ByteSize int
 
 const (
-	BYTE8 ByteSize = 8
-	BYTE16 = 16
-	BYTE32 = 32
-	BYTE64 = 64
+	BYTE8  ByteSize = 8
+	BYTE16          = 16
+	BYTE32          = 32
+	BYTE64          = 64
 )
+
 // ---------------------- writer ------------------------------
 
 type ByteWriter struct {
@@ -66,28 +68,33 @@ func (self *ByteWriter) Float64(f float64) error {
 }
 
 func (self *ByteWriter) Write(v []byte) error {
-
+	length := len(v)
+	if length == 0 {
+		return io.EOF
+	}
 	switch self.ByteSize {
 	case BYTE8:
-		if err := self.UInt8(uint8(len(v))); err != nil {
+		if err := self.UInt8(uint8(length)); err != nil {
 			return err
 		}
 	case BYTE16:
-		if err := self.UInt16(uint16(len(v))); err != nil {
+		if err := self.UInt16(uint16(length)); err != nil {
 			return err
 		}
 	case BYTE32:
-		if err := self.UInt32(uint32(len(v))); err != nil {
+		if err := self.UInt32(uint32(length)); err != nil {
 			return err
 		}
 	case BYTE64:
-		if err := self.UInt64(uint64(len(v))); err != nil {
+		if err := self.UInt64(uint64(length)); err != nil {
 			return err
 		}
 	}
 
-	if _, err := self.buffer.Write(v); err != nil {
-		return err
+	if length > 0 {
+		if _, err := self.buffer.Write(v); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -108,8 +115,8 @@ func (self *ByteWriter) ToReader() *ByteReader {
 
 func NewWriter() *ByteWriter {
 	return &ByteWriter{
-		buffer:bytes.NewBuffer([]byte{}),
-		ByteSize:BYTE16,
+		buffer:   bytes.NewBuffer([]byte{}),
+		ByteSize: BYTE16,
 	}
 }
 
@@ -121,7 +128,7 @@ type ByteReader struct {
 }
 
 func NewReader(v []byte) *ByteReader {
-	return &ByteReader{reader:bytes.NewReader(v)}
+	return &ByteReader{reader: bytes.NewReader(v), ByteSize: BYTE16}
 }
 
 func (self *ByteReader) number(i interface{}) error {
@@ -188,13 +195,28 @@ func (self *ByteReader) Bytes() ([]byte, error) {
 	var len uint64
 	var err error
 	switch self.ByteSize {
-	case BYTE8:  l, e := self.UInt8(); len = uint64(l) ; err = e
-	case BYTE16: l, e := self.UInt16(); len = uint64(l) ; err = e
-	case BYTE32: l, e := self.UInt32(); len = uint64(l) ; err = e
-	case BYTE64: l, e := self.UInt64(); len = uint64(l) ; err = e
+	case BYTE8:
+		l, e := self.UInt8()
+		len = uint64(l)
+		err = e
+	case BYTE16:
+		l, e := self.UInt16();
+		len = uint64(l);
+		err = e
+	case BYTE32:
+		l, e := self.UInt32();
+		len = uint64(l);
+		err = e
+	case BYTE64:
+		l, e := self.UInt64();
+		len = uint64(l);
+		err = e
 	}
 	if err != nil {
 		return nil, err
+	}
+	if len == 0 {
+		return nil, nil
 	}
 	bs := make([]byte, len)
 	rlen, err := self.reader.Read(bs)

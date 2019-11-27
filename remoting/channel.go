@@ -102,17 +102,16 @@ func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 			closed(self)
 		}
 	}()
-
 	self.status.Set(starting)
-	if connected != nil {
-		connected(self)
-	}
-
 	self.group.Add(3)
 
 	go self.syncDo(self.heartbeatLoop)
 	go self.syncDo(self.readLoop)
 	go self.syncDo(self.writeLoop)
+
+	if connected != nil {
+		connected(self)
+	}
 
 	self.wait()
 }

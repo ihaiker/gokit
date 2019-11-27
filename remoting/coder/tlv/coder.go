@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	ErrInvalidArgument    = errors.New("InvalidArgument")
 	ErrLengthMaxLimit     = errors.New("LengthMaxLimit")
 	ErrNotRegisterMessage = errors.New("NotRegisterMessage")
 )
@@ -30,7 +29,7 @@ func NewTLVCoder(maxLength uint16) *tlvCoder {
 
 func (self *tlvCoder) Reg(msg Message) error {
 	if msg == nil {
-		return ErrInvalidArgument
+		return remoting.ErrInvalidArgument
 	}
 	self.reg[msg.TypeID()] = reflect.TypeOf(msg)
 	return nil
@@ -39,7 +38,7 @@ func (self *tlvCoder) Reg(msg Message) error {
 func (self *tlvCoder) Encode(channel remoting.Channel, msg interface{}) ([]byte, error) {
 	message, match := msg.(Message)
 	if ! match {
-		return nil, ErrInvalidArgument
+		return nil, remoting.ErrInvalidArgument
 	}
 
 	typeId := message.TypeID()
@@ -65,13 +64,14 @@ func (self *tlvCoder) Encode(channel remoting.Channel, msg interface{}) ([]byte,
 		if err = binary.Write(w, binary.BigEndian, length); err != nil {
 			return nil, err
 		}
+
 		//value
-		if err = binary.Write(w, binary.BigEndian, bs); err != nil {
-			return nil, err
+		if length > 0 {
+			if err = binary.Write(w, binary.BigEndian, bs); err != nil {
+				return nil, err
+			}
 		}
-
 		w.Cap()
-
 		return w.Bytes(), nil
 	}
 }
@@ -97,10 +97,12 @@ func (self *tlvCoder) Decode(channel remoting.Channel, c io.Reader) (interface{}
 	}
 
 	bs := make([]byte, length)
-	if _, err := io.ReadFull(c, bs); err != nil {
-		return nil, err
+	if length > 0 {
+		if _, err := io.ReadFull(c, bs); err != nil {
+			return nil, err
+		}
 	}
-
+	
 	var msgValue reflect.Value
 	if msgType.Kind() == reflect.Ptr {
 		msgValue = reflect.New(msgType.Elem())
