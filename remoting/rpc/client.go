@@ -45,8 +45,7 @@ func (s *rpcClient) Start() {
 }
 
 func (s *rpcClient) Shutdown() {
-	s.client.Close()
-	s.client.Wait()
+	s.client.Close().Wait()
 }
 
 func (s *rpcClient) dealResponse(resp *Response) {

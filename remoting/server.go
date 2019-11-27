@@ -13,7 +13,7 @@ type Server interface {
 	Start() Server
 
 	//关闭服务
-	Stop()
+	Stop() Server
 
 	Wait()
 
@@ -77,6 +77,9 @@ func (s *tcpServer) startAccept() {
 		default:
 			if isTcp {
 				_ = s.listener.(*net.TCPListener).SetDeadline(time.Now().Add(time.Second))
+			} else {
+				_ = s.listener.(*net.UnixListener).SetDeadline(time.Now().Add(time.Second))
+				s.listener.(*net.UnixListener).SetUnlinkOnClose(true)
 			}
 
 			conn, err := s.listener.Accept()
@@ -130,7 +133,7 @@ func (s *tcpServer) SetClientManager(manager ChannelManager) {
 }
 
 // Stop stops service
-func (s *tcpServer) Stop() {
+func (s *tcpServer) Stop() Server {
 	s.closeOne.Do(func() {
 		logger.Info("关闭TCP服务")
 		close(s.exitChan)
@@ -140,4 +143,5 @@ func (s *tcpServer) Stop() {
 		logger.Debug("关闭TCP服务完成")
 	})
 	s.waitGroup.Wait()
+	return s
 }

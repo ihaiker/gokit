@@ -7,7 +7,7 @@ import (
 
 type Client interface {
 	Start() Client
-	Close()
+	Close() Client
 	Send(msg interface{}) error
 	GetChannel() Channel
 	Wait()
@@ -22,8 +22,9 @@ func (self *tcpClient) Start() Client {
 	return self
 }
 
-func (self *tcpClient) Close() {
+func (self *tcpClient) Close() Client {
 	self.channel.Close()
+	return self
 }
 
 func (self *tcpClient) Send(msg interface{}) error {
