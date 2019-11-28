@@ -11,6 +11,10 @@ type Request struct {
 	Body    []byte
 }
 
+func (request *Request) ID() uint32 {
+	return request.id
+}
+
 func (request *Request) TypeID() uint16 {
 	return REQUEST
 }
