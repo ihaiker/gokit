@@ -69,7 +69,9 @@ func (s *tcpServer) startAccept() {
 	logger.Info("服务启动：", s.listener.Addr().String())
 
 	isTcp := reflect.TypeOf(s.listener).String() == reflect.TypeOf(new(net.TCPListener)).String()
-
+	if ! isTcp {
+		s.listener.(*net.UnixListener).SetUnlinkOnClose(true)
+	}
 	for {
 		select {
 		case <-s.exitChan:
@@ -79,7 +81,6 @@ func (s *tcpServer) startAccept() {
 				_ = s.listener.(*net.TCPListener).SetDeadline(time.Now().Add(time.Second))
 			} else {
 				_ = s.listener.(*net.UnixListener).SetDeadline(time.Now().Add(time.Second))
-				s.listener.(*net.UnixListener).SetUnlinkOnClose(true)
 			}
 
 			conn, err := s.listener.Accept()

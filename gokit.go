@@ -14,7 +14,8 @@ import (
 //go:generate go run ./concurrent/atomic/genertor/atomic.go ./concurrent/atomic int32 uint32 int64 uint64
 
 func Version() {
-	fmt.Println("1.2.0")
+	fmt.Println("1.3.2")
+
 	fmt.Println("logs version: ", logs.VERSION)
 	fmt.Println("remoting version: ", remoting.VERSION)
 	fmt.Println("files version: ", files.VERSION)

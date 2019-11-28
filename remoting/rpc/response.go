@@ -11,6 +11,10 @@ type Response struct {
 	Body  []byte
 }
 
+func NewResponse(id uint32) *Response {
+	return &Response{id: id}
+}
+
 func (response *Response) TypeID() uint16 {
 	return RESPONSE
 }
