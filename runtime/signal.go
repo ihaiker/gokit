@@ -41,19 +41,19 @@ func (sl *signalListener) Shutdown(timeout time.Duration) {
 }
 
 //等待程序退出,如果close函数阻塞也将无法退出
-func (sl *signalListener) Wait(close func()) {
+func (sl *signalListener) Wait(close func()) error {
 	for s := range sl.C {
 		logs.Info("signal: ", s.String())
 		switch s {
 		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1:
 			close()
-			return
+			return nil
 		}
 	}
 }
 
 //无调用的方式也可以退出
-func (sl *signalListener) WaitTimeout(timeout time.Duration, close func()) {
+func (sl *signalListener) WaitTimeout(timeout time.Duration, close func()) error {
 	for s := range sl.C {
 		logs.Info("signal: ", s.String())
 		switch s {
@@ -66,6 +66,9 @@ func (sl *signalListener) WaitTimeout(timeout time.Duration, close func()) {
 			if e := <-out; e == commons.ErrAsyncTimeout {
 				logger.Info("close timeout: ", timeout.String())
 				sl.Kill()
+				return commons.ErrAsyncTimeout
+			} else {
+				return nil
 			}
 		}
 	}
