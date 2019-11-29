@@ -50,6 +50,7 @@ func (sl *signalListener) Wait(close func()) error {
 			return nil
 		}
 	}
+	return nil
 }
 
 //无调用的方式也可以退出
@@ -72,4 +73,5 @@ func (sl *signalListener) WaitTimeout(timeout time.Duration, close func()) error
 			}
 		}
 	}
+	return nil
 }
