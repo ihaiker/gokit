@@ -11,6 +11,13 @@ import (
 type OnMessage func(channel remoting.Channel, request *Request) *Response
 type OnResponse func(response *Response)
 
+var OK OnMessage = func(channel remoting.Channel, request *Request) *Response {
+	resp := NewResponse(request.ID())
+	resp.Body = []byte("OK")
+	return resp
+}
+
+
 func makeHandlerMaker(onMessage OnMessage, onResponse OnResponse) remoting.HandlerMaker {
 	return func(channel remoting.Channel) remoting.Handler {
 		return newHandler(onMessage, onResponse)
