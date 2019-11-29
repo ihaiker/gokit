@@ -16,7 +16,7 @@ func handlerMaker(ch remoting.Channel) remoting.Handler {
 	return handler.Reg().With(handler.Adapter()).
 		WithOnMessage(func(session remoting.Channel, message interface{}) {
 			logs.Info("接收消息:", message)
-			_ = session.Write(msg.NewEcho(fmt.Sprint("ok ", message)))
+			_ = session.Write(msg.NewEcho(fmt.Sprint("ok ", message)), time.Second)
 		})
 
 }

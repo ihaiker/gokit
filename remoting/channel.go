@@ -22,7 +22,7 @@ type asyncMessage struct {
 //连接保持器
 type Channel interface {
 	//同步发送消息
-	Write(msg interface{}) (err error)
+	Write(msg interface{}, timeout time.Duration) (err error)
 
 	//异步发送消息
 	AsyncWrite(msg interface{}, timeout time.Duration, sendCallback SendMessageCallBack)
@@ -125,7 +125,7 @@ func (self *tcpChannel) readLoop() {
 	logger.Debug("reader channel start: ", self.GetRemoteAddress())
 	defer func() {
 		self.closeChannel()
-		logger.Debug("reader channel closeChannel: ", self.GetRemoteAddress())
+		logger.Debug("reader channel close: ", self.GetRemoteAddress())
 	}()
 
 	for {
@@ -250,11 +250,11 @@ func isCloseTCPConnect(err error) bool {
 	return false
 }
 
-func (self *tcpChannel) Write(msg interface{}) (err error) {
+func (self *tcpChannel) Write(msg interface{}, timeout time.Duration) (err error) {
 	result := make(chan error, 1)
 	defer close(result)
 
-	self.AsyncWrite(msg, time.Second, func(msg interface{}, err error) {
+	self.AsyncWrite(msg, timeout, func(msg interface{}, err error) {
 		result <- err
 	})
 

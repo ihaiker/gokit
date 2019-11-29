@@ -35,7 +35,7 @@ func TestRpcServer(t *testing.T) {
 }
 
 func TestRpcClient(t *testing.T) {
-	client, err := NewClient("127.0.0.1:6379", onMessage)
+	client, err := NewClient("unix://Users/haiker/workbench/self/go/sudis/conf/sudis.sock", onMessage)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,13 +44,13 @@ func TestRpcClient(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		request := new(Request)
-		request.URL = "test"
+		request.URL = "shutdown"
 		request.Body = []byte(strconv.Itoa(i))
 		resp := client.Send(request, time.Second*3)
 		if resp.Error != nil {
-			logger.Debug("error : ",resp.Error)
+			logger.Debug("error : ", resp.Error)
 		} else {
-			logger.Debug("response: ",string(resp.Body))
+			logger.Debug("response: ", string(resp.Body))
 		}
 	}
 }

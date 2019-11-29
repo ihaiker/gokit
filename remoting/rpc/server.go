@@ -91,7 +91,7 @@ func (s *rpcServer) Send(channel string, request *Request, timeout time.Duration
 	response := new(Response)
 	if ch, has := s.GetChannel(channel); has {
 		response.Error = ErrNotFount
-	} else if err := ch.Write(request); err != nil {
+	} else if err := ch.Write(request, timeout); err != nil {
 		response.Error = err
 	}
 
@@ -118,7 +118,7 @@ func (s *rpcServer) Async(channel string, request *Request, timeout time.Duratio
 		callback(&Response{Error: ErrNotFount, id: request.id})
 	} else {
 		rc := &responseCache{callback: callback, timeout: time.Now().Add(timeout)}
-		if err := ch.Write(request); err != nil {
+		if err := ch.Write(request, timeout); err != nil {
 			callback(&Response{Error: err, id: request.id})
 		} else {
 			s.respCache[request.id] = rc

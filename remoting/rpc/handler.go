@@ -5,6 +5,7 @@ import (
 	"github.com/ihaiker/gokit/remoting"
 	"github.com/ihaiker/gokit/remoting/coder/tlv"
 	"github.com/ihaiker/gokit/remoting/handler"
+	"time"
 )
 
 type OnMessage func(channel remoting.Channel, request *Request) *Response
@@ -22,7 +23,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
 	reg := handler.Reg()
 	reg.WithOnIdle(func(ch remoting.Channel) {
 		logger.Debug("write ping to:", ch.GetRemoteAddress())
-		_ = ch.Write(ping)
+		_ = ch.Write(ping, time.Second)
 	}).WithOnDecodeError(func(ch remoting.Channel, err error) {
 		logger.Debug("decoder on:", ch.GetRemoteAddress(), ", error:", err)
 		ch.Close()
@@ -36,7 +37,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
 		pkg := msg.(tlv.Message)
 		switch pkg.TypeID() {
 		case PING:
-			_ = ch.Write(pong)
+			_ = ch.Write(pong, time.Second)
 		case PONG:
 			//do nothing
 		case REQUEST:
@@ -44,7 +45,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
 			logger.Debug("request: ", req.URL, ", ch:", ch.GetRemoteAddress())
 			commons.Try(func() {
 				if resp := onMessage(ch, req); resp != nil {
-					if err := ch.Write(resp); err != nil {
+					if err := ch.Write(resp, time.Second); err != nil {
 						logger.Errorf("write response %s error: %s", req.URL, err)
 					}
 				}
@@ -53,7 +54,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
 				resp := new(Response)
 				resp.id = msg.(*Request).id
 				resp.Error = ErrSystemError
-				if err := ch.Write(resp); err != nil {
+				if err := ch.Write(resp, time.Second); err != nil {
 					logger.Errorf("write response %s error: %s", req.URL, err)
 				}
 			})
