@@ -21,7 +21,6 @@ type RpcClient interface {
 
 type rpcClient struct {
 	client    remoting.Client
-	handler   OnMessage
 	respCache map[uint32]*responseCache
 	id        *atomic.AtomicUint32
 }
@@ -35,7 +34,6 @@ func NewClient(address string, onMessage OnMessage) (RpcClient, error) {
 	} else {
 		client.client = tcpClient
 	}
-	client.handler = onMessage
 	client.respCache = make(map[uint32]*responseCache)
 	return client, nil
 }

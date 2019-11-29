@@ -10,6 +10,8 @@ import (
 type RpcServer interface {
 	Start()
 
+	Wait()
+
 	Shutdown()
 
 	GetChannel(channel string) (ch remoting.Channel, has bool)
@@ -33,7 +35,6 @@ func (rc *responseCache) Close() {
 
 type rpcServer struct {
 	server    remoting.Server
-	handler   OnMessage
 	respCache map[uint32]*responseCache
 	id        *atomic.AtomicUint32
 }
@@ -47,13 +48,16 @@ func NewServer(address string, onMessage OnMessage) (RpcServer, error) {
 	} else {
 		rpcServer.server = server
 	}
-	rpcServer.handler = onMessage
 	rpcServer.respCache = make(map[uint32]*responseCache)
 	return rpcServer, nil
 }
 
 func (s *rpcServer) Start() {
 	s.server.Start()
+}
+
+func (s *rpcServer) Wait() {
+	s.server.Wait()
 }
 
 func (s *rpcServer) Shutdown() {

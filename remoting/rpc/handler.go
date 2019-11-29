@@ -43,9 +43,10 @@ func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
 			req := msg.(*Request)
 			logger.Debug("request: ", req.URL, ", ch:", ch.GetRemoteAddress())
 			commons.Try(func() {
-				resp := onMessage(ch, req)
-				if err := ch.Write(resp); err != nil {
-					logger.Errorf("write response %s error: %s", req.URL, err)
+				if resp := onMessage(ch, req); resp != nil {
+					if err := ch.Write(resp); err != nil {
+						logger.Errorf("write response %s error: %s", req.URL, err)
+					}
 				}
 			}, func(e error) {
 				logger.Errorf("dealwith request(%s) error: %s", req.URL, e)
