@@ -40,9 +40,12 @@ type rpcServer struct {
 }
 
 func NewServer(address string, onMessage OnMessage) (RpcServer, error) {
+	return NewServerWithConfig(address, remoting.DefaultTCPConfig(), onMessage)
+}
+
+func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage) (RpcServer, error) {
 	rpcServer := new(rpcServer)
 	rpcServer.id = atomic.NewAtomicUint32(0)
-	config := remoting.DefaultTCPConfig()
 	if server, err := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.dealResponse), coderMaker); err != nil {
 		return nil, err
 	} else {

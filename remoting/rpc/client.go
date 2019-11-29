@@ -26,9 +26,12 @@ type rpcClient struct {
 }
 
 func NewClient(address string, onMessage OnMessage) (RpcClient, error) {
+	return NewClientWithConfig(address, remoting.DefaultTCPConfig(), onMessage)
+}
+
+func NewClientWithConfig(address string, config *remoting.Config, onMessage OnMessage) (RpcClient, error) {
 	client := new(rpcClient)
 	client.id = atomic.NewAtomicUint32(0)
-	config := remoting.DefaultTCPConfig()
 	if tcpClient, err := remoting.NewClient(address, config, newHandler(onMessage, client.dealResponse), newCoder()); err != nil {
 		return nil, err
 	} else {
