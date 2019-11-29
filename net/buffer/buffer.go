@@ -3,9 +3,8 @@ package buffer
 import (
 	"bytes"
 	"encoding/binary"
-	"io"
-	"math"
 	"errors"
+	"math"
 )
 
 //默认写入的字节流长度，这个长度是因为mark长度标示所限制的。
@@ -69,9 +68,7 @@ func (self *ByteWriter) Float64(f float64) error {
 
 func (self *ByteWriter) Write(v []byte) error {
 	length := len(v)
-	if length == 0 {
-		return io.EOF
-	}
+
 	switch self.ByteSize {
 	case BYTE8:
 		if err := self.UInt8(uint8(length)); err != nil {

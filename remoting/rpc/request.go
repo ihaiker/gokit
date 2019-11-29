@@ -40,12 +40,20 @@ func (request *Request) Encode() ([]byte, error) {
 	wr := buffer.NewWriter()
 	_ = wr.UInt32(request.id)
 	_ = wr.String(request.URL)
-	_ = wr.UInt8(uint8(len(request.Headers)))
-	for key, value := range request.Headers {
-		_ = wr.String(key)
-		_ = wr.String(value)
+	if request.Headers == nil {
+		_ = wr.UInt8(uint8(0))
+	} else {
+		_ = wr.UInt8(uint8(len(request.Headers)))
+		for key, value := range request.Headers {
+			_ = wr.String(key)
+			_ = wr.String(value)
+		}
 	}
-	_ = wr.Write(request.Body)
+	if request.Body == nil {
+		_ = wr.Write([]byte{})
+	} else {
+		_ = wr.Write(request.Body)
+	}
 	return wr.ToBytes(), nil
 }
 
@@ -61,16 +69,18 @@ func (request *Request) Decode(bs []byte) (err error) {
 	if headerLen, err = reader.UInt8(); err != nil {
 		return
 	}
-	request.Headers = make(map[string]string, headerLen)
-	for i := uint8(0); i < headerLen; i += 2 {
-		var key, value string
-		if key, err = reader.String(); err != nil {
-			return
+	if headerLen > 0 {
+		request.Headers = make(map[string]string, headerLen)
+		for i := uint8(0); i < headerLen; i += 2 {
+			var key, value string
+			if key, err = reader.String(); err != nil {
+				return
+			}
+			if value, err = reader.String(); err != nil {
+				return
+			}
+			request.Headers[key] = value
 		}
-		if value, err = reader.String(); err != nil {
-			return
-		}
-		request.Headers[key] = value
 	}
 	request.Body, err = reader.Bytes()
 	return
