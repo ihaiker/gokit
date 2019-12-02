@@ -71,7 +71,7 @@ type tcpChannel struct {
 }
 
 func newChannel(config *Config, connect net.Conn) *tcpChannel {
-	if tcpCon, march := connect.(*net.TCPConn); march {
+	if tcpCon, match := connect.(*net.TCPConn); match {
 		_ = tcpCon.SetKeepAlive(true)
 		_ = tcpCon.SetNoDelay(true)
 		_ = tcpCon.SetWriteBuffer(config.WriteBufferSize)
@@ -135,7 +135,7 @@ func (self *tcpChannel) readLoop() {
 		case <-self.closeChan:
 			return
 		default:
-			//_ = self.connect.SetReadDeadline(time.Now().Add(time.Second))
+			_ = self.connect.SetReadDeadline(time.Now().Add(time.Second))
 			if msg, err := self.coder.Decode(self, self.connect); commons.NotNil(err) {
 				if isCloseTCPConnect(err) {
 					return
@@ -147,6 +147,7 @@ func (self *tcpChannel) readLoop() {
 					}
 				}
 			} else {
+				_ = self.connect.SetReadDeadline(time.Now().Add(time.Second))
 				self.resetIdle()
 				if self.config.AsynHandlerGroup > 0 {
 					//fixme 管理携程
@@ -277,7 +278,7 @@ func (self *tcpChannel) AsyncWrite(msg interface{}, timeout time.Duration, sendC
 	}
 }
 
-func (self *tcpChannel) GetConnect() (net.Conn) {
+func (self *tcpChannel) GetConnect() net.Conn {
 	return self.connect
 }
 

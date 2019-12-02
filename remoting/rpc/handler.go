@@ -9,6 +9,7 @@ import (
 )
 
 type OnMessage func(channel remoting.Channel, request *Request) *Response
+type OnClose func(channel remoting.Channel)
 type OnResponse func(response *Response)
 
 func OK(channel remoting.Channel, request *Request) *Response {
@@ -35,17 +36,21 @@ func Check(check func(channel remoting.Channel, request *Request) error, onMessa
 	}
 }
 
-func makeHandlerMaker(onMessage OnMessage, onResponse OnResponse) remoting.HandlerMaker {
+func makeHandlerMaker(onMessage OnMessage, onResponse OnResponse, onClose OnClose) remoting.HandlerMaker {
 	return func(channel remoting.Channel) remoting.Handler {
-		return newHandler(onMessage, onResponse)
+		return newHandler(onMessage, onResponse, onClose)
 	}
 }
 
-func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
+func newHandler(onMessage OnMessage, onResponse OnResponse, onClose OnClose) remoting.Handler {
 	ping := new(Ping)
 	pong := new(Pong)
 	reg := handler.Reg()
-	reg.WithOnIdle(func(ch remoting.Channel) {
+	reg.WithOnClose(func(session remoting.Channel) {
+		if onClose != nil {
+			onClose(session)
+		}
+	}).WithOnIdle(func(ch remoting.Channel) {
 		logger.Debug("write ping to:", ch.GetRemoteAddress())
 		_ = ch.Write(ping, time.Second)
 	}).WithOnDecodeError(func(ch remoting.Channel, err error) {

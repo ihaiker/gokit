@@ -41,14 +41,14 @@ type rpcServer struct {
 	id        *atomic.AtomicUint32
 }
 
-func NewServer(address string, onMessage OnMessage) (RpcServer, error) {
-	return NewServerWithConfig(address, remoting.DefaultTCPConfig(), onMessage)
+func NewServer(address string, onMessage OnMessage, onClose OnClose) (RpcServer, error) {
+	return NewServerWithConfig(address, remoting.DefaultTCPConfig(), onMessage, onClose)
 }
 
-func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage) (RpcServer, error) {
+func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage, onClose OnClose) (RpcServer, error) {
 	rpcServer := new(rpcServer)
 	rpcServer.id = atomic.NewAtomicUint32(0)
-	if server, err := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse), coderMaker); err != nil {
+	if server, err := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse, onClose), coderMaker); err != nil {
 		return nil, err
 	} else {
 		rpcServer.server = server
