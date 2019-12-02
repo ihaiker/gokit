@@ -23,7 +23,7 @@ func onMessage(ch remoting.Channel, req *Request) *Response {
 }
 
 func TestRpcServer(t *testing.T) {
-	server, err := NewServer(":6379", onMessage)
+	server, err := NewServer(":6379", onMessage);
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,11 +35,11 @@ func TestRpcServer(t *testing.T) {
 }
 
 func TestRpcClient(t *testing.T) {
-	client := NewClient(":6379", onMessage)
-	if err := client.Start(); err != nil {
+	client, err := NewClient(":6379", onMessage)
+	if err != nil {
 		t.Fatal(err)
 	}
-
+	client.Start()
 	time.Sleep(time.Second)
 
 	for i := 0; i < 10; i++ {
