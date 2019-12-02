@@ -1,3 +1,3 @@
 package remoting
 
-const VERSION = "v1.2.3"
+const VERSION = "v2.0.0"

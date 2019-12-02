@@ -15,6 +15,18 @@ func NewResponse(id uint32) *Response {
 	return &Response{id: id}
 }
 
+func NewOKResponse(id uint32) *Response {
+	resp := NewOKResponse(id)
+	resp.Body = []byte("OK")
+	return resp
+}
+
+func NewErrorResponse(id uint32, err error) *Response {
+	resp := NewResponse(id)
+	resp.Error = err
+	return resp
+}
+
 func (response *Response) TypeID() uint16 {
 	return RESPONSE
 }

@@ -101,6 +101,7 @@ func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 		if closed != nil {
 			closed(self)
 		}
+		self.handler.OnClose(self)
 	}()
 	self.status.Set(starting)
 	self.group.Add(3)
@@ -112,6 +113,7 @@ func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 	if connected != nil {
 		connected(self)
 	}
+	self.handler.OnConnect(self)
 
 	self.wait()
 }

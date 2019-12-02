@@ -11,10 +11,12 @@ var (
 )
 
 type register struct {
-	name   string
-	module string
-	config *configor.Config
-	path   []string
+	name      string
+	module    string
+	config    *configor.Config
+	path      []string
+	expandEnv bool
+	expand    func(string) string
 }
 
 func NewConfigRegister(name, module string) *register {
@@ -56,9 +58,26 @@ func (this *register) AddPath(path ...string) *register {
 	return this
 }
 
+func (this *register) ExpandEnv() {
+	this.expandEnv = true;
+}
+
+func (this *register) Expend(expendFn func(string) string) {
+	this.expand = expendFn;
+}
+
+func (this *register) expendStringValue(cfg interface{}) error {
+	//todo 这里优化
+	return nil
+}
+
 func (this *register) Marshal(cfg interface{}) error {
 	if len(this.path) == 0 {
 		return ErrConfigNotFound
 	}
-	return configor.New(this.config).Load(cfg, this.path...)
+	if err := configor.New(this.config).Load(cfg, this.path...); err != nil {
+		return err
+	} else {
+		return this.expendStringValue(cfg);
+	}
 }

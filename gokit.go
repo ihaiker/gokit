@@ -8,13 +8,14 @@ import (
 	"github.com/ihaiker/gokit/logs"
 	"github.com/ihaiker/gokit/maths"
 	"github.com/ihaiker/gokit/remoting"
+	runtimeKit "github.com/ihaiker/gokit/runtime"
 	signalKit "github.com/ihaiker/gokit/runtime/signal"
 )
 
 //go:generate go run ./concurrent/atomic/genertor/atomic.go ./concurrent/atomic int32 uint32 int64 uint64
 
 func Version() {
-	fmt.Println("1.3.2")
+	fmt.Println("1.5.0")
 
 	fmt.Println("logs version: ", logs.VERSION)
 	fmt.Println("remoting version: ", remoting.VERSION)
@@ -22,5 +23,5 @@ func Version() {
 	fmt.Println("atomic version:", atomic.VERSION)
 	fmt.Println("future version:", future.VERSION)
 	fmt.Println("math version:", maths.VERSION)
-	fmt.Println("signal version:", signalKit.VERSION)
+	fmt.Println("signal version:", runtimeKit.VERSION)
 }
