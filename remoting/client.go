@@ -19,7 +19,10 @@ type tcpClient struct {
 }
 
 func (self *tcpClient) Start() Client {
-	go self.channel.do(nil, nil)
+	c := make(chan interface{})
+	go self.channel.do(func(channel Channel) { c <- channel }, nil)
+	<-c
+	close(c)
 	return self
 }
 

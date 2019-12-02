@@ -27,13 +27,10 @@ func main() {
 	}
 	clinet.Start()
 
-	time.Sleep(time.Second)
-
-
 	for {
 		n := rand.Intn(1000)
 		time.Sleep(time.Duration(n) * time.Millisecond)
-		err := clinet.Send(msg.NewEcho(n))
+		err := clinet.Send(msg.NewEcho(n), time.Second)
 		if err != nil {
 			logs.Error("消息错误：", err)
 			clinet.Close()

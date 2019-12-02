@@ -21,8 +21,8 @@ func main() {
 	clinet.Start()
 
 	for {
-		time.Sleep(time.Millisecond*10)
-		err := clinet.Send(time.Now())
+		time.Sleep(time.Millisecond * 10)
+		err := clinet.Send(time.Now(), time.Second)
 		if err != nil {
 			clinet.Close()
 			break

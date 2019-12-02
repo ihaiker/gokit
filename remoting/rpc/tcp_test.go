@@ -35,7 +35,7 @@ func TestRpcServer(t *testing.T) {
 }
 
 func TestRpcClient(t *testing.T) {
-	client, err := NewClient("unix://Users/haiker/workbench/self/go/sudis/conf/sudis.sock", onMessage)
+	client, err := NewClient(":6379", onMessage)
 	if err != nil {
 		t.Fatal(err)
 	}

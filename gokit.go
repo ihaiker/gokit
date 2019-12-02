@@ -9,7 +9,6 @@ import (
 	"github.com/ihaiker/gokit/maths"
 	"github.com/ihaiker/gokit/remoting"
 	runtimeKit "github.com/ihaiker/gokit/runtime"
-	signalKit "github.com/ihaiker/gokit/runtime/signal"
 )
 
 //go:generate go run ./concurrent/atomic/genertor/atomic.go ./concurrent/atomic int32 uint32 int64 uint64
