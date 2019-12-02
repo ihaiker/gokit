@@ -6,8 +6,8 @@ import (
 )
 
 type Client interface {
-	Start() Client
-	Close() Client
+	Start() error
+	Close()
 	Send(msg interface{}, timeout time.Duration) error
 	Async(msg interface{}, timeout time.Duration, callback SendMessageCallBack)
 	GetChannel() Channel
@@ -15,17 +15,32 @@ type Client interface {
 }
 
 type tcpClient struct {
+	address string   //监听地址
+	connect net.Conn //连接器
+	coder   Coder    //消息编码
+	handler Handler  //消息处理器
+	config  *Config  //配置管理器
 	channel *tcpChannel
 }
 
-func (self *tcpClient) Start() Client {
-	go self.channel.do(nil, nil)
-	return self
+func (self *tcpClient) Start() (err error) {
+	if self.connect, err = Dial(self.address); err != nil {
+		return
+	}
+
+	self.channel = newChannel(self.config, self.connect)
+	self.channel.handler = self.handler
+	self.channel.coder = self.coder
+
+	c := make(chan interface{})
+	go self.channel.do(func(channel Channel) { c <- channel }, nil)
+	<-c
+	close(c)
+	return nil
 }
 
-func (self *tcpClient) Close() Client {
+func (self *tcpClient) Close() {
 	self.channel.Close()
-	return self
 }
 
 func (self *tcpClient) Send(msg interface{}, timeout time.Duration) error {
@@ -44,17 +59,11 @@ func (self *tcpClient) Wait() {
 	self.channel.wait()
 }
 
-func NewClientWith(connect net.Conn, config *Config, handler Handler, coder Coder) Client {
-	channel := newChannel(config, connect)
-	channel.handler = handler
-	channel.coder = coder
-	return &tcpClient{channel: channel}
-}
-
-func NewClient(address string, config *Config, handler Handler, coder Coder) (Client, error) {
-	if conn, err := Dial(address); err != nil {
-		return nil, err
-	} else {
-		return NewClientWith(conn, config, handler, coder), nil
+func NewClient(address string, config *Config, handler Handler, coder Coder) Client {
+	return &tcpClient{
+		address: address,
+		coder:   coder,
+		handler: handler,
+		config:  config,
 	}
 }

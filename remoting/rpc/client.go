@@ -8,7 +8,7 @@ import (
 )
 
 type RpcClient interface {
-	Start()
+	Start() error
 
 	Shutdown()
 
@@ -25,31 +25,28 @@ type rpcClient struct {
 	id        *atomic.AtomicUint32
 }
 
-func NewClient(address string, onMessage OnMessage) (RpcClient, error) {
+func NewClient(address string, onMessage OnMessage) RpcClient {
 	return NewClientWithConfig(address, remoting.DefaultTCPConfig(), onMessage)
 }
 
-func NewClientWithConfig(address string, config *remoting.Config, onMessage OnMessage) (RpcClient, error) {
+func NewClientWithConfig(address string, config *remoting.Config, onMessage OnMessage) RpcClient {
 	client := new(rpcClient)
 	client.id = atomic.NewAtomicUint32(0)
-	if tcpClient, err := remoting.NewClient(address, config, newHandler(onMessage, client.dealResponse), newCoder()); err != nil {
-		return nil, err
-	} else {
-		client.client = tcpClient
-	}
+	client.client = remoting.NewClient(address, config, newHandler(onMessage, client.onResponse), newCoder())
 	client.respCache = make(map[uint32]*responseCache)
-	return client, nil
+	return client
 }
 
-func (s *rpcClient) Start() {
-	s.client.Start()
+func (s *rpcClient) Start() error {
+	return s.client.Start()
 }
 
 func (s *rpcClient) Shutdown() {
-	s.client.Close().Wait()
+	s.client.Close()
+	s.client.Wait()
 }
 
-func (s *rpcClient) dealResponse(resp *Response) {
+func (s *rpcClient) onResponse(resp *Response) {
 	if cache, has := s.respCache[resp.id]; has {
 		delete(s.respCache, resp.id)
 		commons.Try(func() {
@@ -59,7 +56,7 @@ func (s *rpcClient) dealResponse(resp *Response) {
 				cache.callback(resp)
 			}
 		}, func(e error) { //防止并发问题正好删除关闭触发这里
-			logger.Warn("dealResponse error:", e)
+			logger.Warn("onResponse error:", e)
 		})
 	} else {
 		logger.Debug("ignore response: ", resp.id)

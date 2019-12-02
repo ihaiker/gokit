@@ -13,16 +13,16 @@ func main() {
 
 	config := remoting.DefaultTCPConfig()
 
-	clinet, err := remoting.NewClient("127.0.0.1:6379", config, handler.Adapter(), line.New("\n"))
-	if err != nil {
+	clinet := remoting.NewClient("127.0.0.1:6379", config, handler.Adapter(), line.New("\n"))
+
+	if err := clinet.Start(); err != nil {
 		logs.Fatal(err)
 		return
 	}
-	clinet.Start()
 
 	for {
-		time.Sleep(time.Millisecond*10)
-		err := clinet.Send(time.Now())
+		time.Sleep(time.Millisecond * 10)
+		err := clinet.Send(time.Now(), time.Second)
 		if err != nil {
 			clinet.Close()
 			break

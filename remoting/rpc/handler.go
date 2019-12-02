@@ -74,7 +74,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse) remoting.Handler {
 					}
 				}
 			}, func(e error) {
-				logger.Errorf("dealwith request(%s) error: %s", req.URL, e)
+				logger.Errorf("Handle request(%s) error: %s", req.URL, e)
 				resp := new(Response)
 				resp.id = msg.(*Request).id
 				resp.Error = ErrSystemError

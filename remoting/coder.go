@@ -1,12 +1,7 @@
 package remoting
 
 import (
-	"errors"
 	"io"
-)
-
-var (
-	ErrInvalidCoder = errors.New("Err: invalid coder")
 )
 
 type Coder interface {

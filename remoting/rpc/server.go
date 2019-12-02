@@ -14,6 +14,8 @@ type RpcServer interface {
 
 	Shutdown()
 
+	GetChannelManager() remoting.ChannelManager
+
 	GetChannel(channel string) (ch remoting.Channel, has bool)
 
 	Send(channel string, request *Request, timeout time.Duration) (response *Response)
@@ -46,7 +48,7 @@ func NewServer(address string, onMessage OnMessage) (RpcServer, error) {
 func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage) (RpcServer, error) {
 	rpcServer := new(rpcServer)
 	rpcServer.id = atomic.NewAtomicUint32(0)
-	if server, err := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.dealResponse), coderMaker); err != nil {
+	if server, err := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse), coderMaker); err != nil {
 		return nil, err
 	} else {
 		rpcServer.server = server
@@ -67,7 +69,7 @@ func (s *rpcServer) Shutdown() {
 	s.server.Stop().Wait()
 }
 
-func (s *rpcServer) dealResponse(resp *Response) {
+func (s *rpcServer) onResponse(resp *Response) {
 	if cache, has := s.respCache[resp.id]; has {
 		delete(s.respCache, resp.id)
 		commons.Try(func() {
@@ -77,7 +79,7 @@ func (s *rpcServer) dealResponse(resp *Response) {
 				cache.callback(resp)
 			}
 		}, func(e error) { //防止并发问题正好删除关闭触发这里
-			logger.Warn("dealResponse error:", e)
+			logger.Warn("onResponse error:", e)
 		})
 	} else {
 		logger.Debug("ignore response: ", resp.id)
@@ -86,6 +88,10 @@ func (s *rpcServer) dealResponse(resp *Response) {
 
 func (s *rpcServer) GetChannel(channel string) (remoting.Channel, bool) {
 	return s.server.GetClientManager().Get(channel)
+}
+
+func (s *rpcServer) GetChannelManager() remoting.ChannelManager {
+	return s.server.GetClientManager()
 }
 
 func (s *rpcServer) Send(channel string, request *Request, timeout time.Duration) *Response {
