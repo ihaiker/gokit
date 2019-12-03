@@ -63,3 +63,6 @@ func SetNamedLevel(name string, level Level) {
 func SetDebugMode(setDebug bool) {
 	debug = setDebug
 }
+func IsDebugMode() bool {
+	return debug
+}
