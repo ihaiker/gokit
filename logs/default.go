@@ -35,9 +35,9 @@ func Fatalf(format string, args ...interface{}) {
 }
 
 func SetLevel(level Level) {
-	Root().(ConfigLogger).SetLevel(level)
+	Root().SetLevel(level)
 }
 
 func SetOut(out io.Writer) {
-	Root().(ConfigLogger).SetOut(out)
+	Root().SetOut(out)
 }

@@ -56,12 +56,12 @@ func initLogger(name string, itemConfig *loggerConfigItem) error {
 	if ! has {
 		logger = createLogger(name)
 	}
-	logger.(ConfigLogger).SetLevel(FromString(itemConfig.Level))
-	logger.(ConfigLogger).SetPattern(itemConfig.Pattern)
+	logger.SetLevel(FromString(itemConfig.Level))
+	logger.SetPattern(itemConfig.Pattern)
 	if appenderWriter, err := appender(itemConfig.Appender); err != nil {
 		return err
 	} else {
-		logger.(ConfigLogger).SetOut(appenderWriter)
+		logger.SetOut(appenderWriter)
 	}
 
 	loggers[name] = logger

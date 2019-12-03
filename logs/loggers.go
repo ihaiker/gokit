@@ -10,7 +10,7 @@ var loggers = map[string]Logger{}
 var lock sync.Mutex
 var debug = false
 
-func createLogger(name string) ConfigLogger {
+func createLogger(name string) Logger {
 	l := new(logger)
 	l.name = name
 	l.SetOut(os.Stdout)
@@ -33,9 +33,9 @@ func GetLogger(name string) Logger {
 
 	if _, has := loggers[name]; !has {
 		nl := createLogger(name)
-		nl.SetLevel(Root().(ConfigLogger).Level())
-		nl.SetPattern(Root().(ConfigLogger).Pattern().String())
-		nl.SetOut(Root().(ConfigLogger).Out())
+		nl.SetLevel(Root().Level())
+		nl.SetPattern(Root().Pattern().String())
+		nl.SetOut(Root().Out())
 		loggers[name] = nl
 	}
 	return loggers[name]
@@ -48,7 +48,7 @@ func Log(name string) (logger Logger, has bool) {
 
 func CloseAll() {
 	for _, logger := range loggers {
-		out := logger.(ConfigLogger).Out()
+		out := logger.Out()
 		if closer, match := out.(io.Closer); match {
 			_ = closer.Close()
 		}
@@ -57,7 +57,7 @@ func CloseAll() {
 
 func SetNamedLevel(name string, level Level) {
 	logger := GetLogger(name)
-	logger.(ConfigLogger).SetLevel(level)
+	logger.SetLevel(level)
 }
 
 func SetDebugMode(setDebug bool) {
