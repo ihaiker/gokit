@@ -42,20 +42,20 @@ type rpcServer struct {
 	id        *atomic.AtomicUint32
 }
 
-func NewServer(address string, onMessage OnMessage, onClose OnClose) (RpcServer, error) {
+func NewServer(address string, onMessage OnMessage, onClose OnClose) RpcServer {
 	return NewServerWithConfig(address, remoting.DefaultTCPConfig(), onMessage, onClose)
 }
 
-func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage, onClose OnClose) (RpcServer, error) {
+func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage, onClose OnClose) RpcServer {
 	rpcServer := new(rpcServer)
 	rpcServer.id = atomic.NewAtomicUint32(0)
-	if server, err := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse, onClose), coderMaker); err != nil {
+	if server := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse, onClose), coderMaker); err != nil {
 		return nil, err
 	} else {
 		rpcServer.server = server
 	}
 	rpcServer.respCache = make(map[uint32]*responseCache)
-	return rpcServer, nil
+	return rpcServer
 }
 
 func (s *rpcServer) Start() {

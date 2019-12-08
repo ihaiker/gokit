@@ -7,7 +7,7 @@ import (
 	"github.com/ihaiker/gokit/remoting/coder/line"
 	"github.com/ihaiker/gokit/remoting/handler"
 	runtimeKit "github.com/ihaiker/gokit/runtime"
-	"log"
+	"os"
 	"time"
 )
 
@@ -38,15 +38,13 @@ func main() {
 	logs.SetDebugMode(true)
 
 	config := remoting.DefaultTCPConfig()
-	server, err := remoting.NewServer(":6379", config, handlerMaker, protocolMaker)
+	server := remoting.NewServer(":6379", config, handlerMaker, protocolMaker)
+
+	err := server.Start()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	//go func() {
-	//	time.Sleep(time.Second * 30)
-	//	server.Stop()
-	//}()
-	server.Start()
 	runtimeKit.NewListener().WaitTimeout(time.Second, func() {
 		server.Stop().Wait()
 	})

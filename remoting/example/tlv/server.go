@@ -32,13 +32,15 @@ func main() {
 	config := remoting.DefaultTCPConfig()
 	config.IdleDuration = 0
 
-	server, err := remoting.NewServer(":6379", config, handlerMaker, protocolMaker)
-	if err != nil {
-		log.Fatal(err)
-	}
+	server := remoting.NewServer(":6379", config, handlerMaker, protocolMaker)
+
 	//go func() {
 	//	time.Sleep(time.Second * 30)
 	//	server.Stop()
 	//}()
-	server.Start().Wait()
+	err := server.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	server.Wait()
 }

@@ -10,7 +10,7 @@ import (
 
 type Server interface {
 	//启动服务
-	Start() Server
+	Start() error
 
 	//关闭服务
 	Stop() Server
@@ -24,7 +24,9 @@ type Server interface {
 }
 
 type tcpServer struct {
-	config   *Config // server configuration
+	config *Config // server configuration
+
+	address  string
 	listener net.Listener
 
 	handlerMaker HandlerMaker // message callbacks in connection
@@ -38,18 +40,10 @@ type tcpServer struct {
 	waitGroup *sync.WaitGroup
 }
 
-func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderMaker CoderMaker) (Server, error) {
-	if listener, err := Listen(address); err != nil {
-		return nil, err
-	} else {
-		return NewServerListen(listener, config, handlerMaker, coderMaker), nil
-	}
-}
-
-func NewServerListen(listener net.Listener, config *Config, handlerMaker HandlerMaker, coderMaker CoderMaker) Server {
+func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderMaker CoderMaker) Server {
 	return &tcpServer{
-		config:   config,
-		listener: listener,
+		address: address,
+		config:  config,
 
 		handlerMaker: handlerMaker,
 		coderMaker:   coderMaker,
@@ -111,10 +105,13 @@ func (s *tcpServer) startAccept() {
 }
 
 // Start starts service
-func (s *tcpServer) Start() Server {
+func (s *tcpServer) Start() (err error) {
+	if s.listener, err = Listen(s.address); err != nil {
+		return
+	}
 	s.waitGroup.Add(1)
 	go s.startAccept()
-	return s
+	return nil
 }
 
 func (s *tcpServer) Wait() {

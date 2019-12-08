@@ -10,6 +10,7 @@ var (
 	ErrInvalidParameter = errors.New("invalid parameter")
 	ErrLimit            = errors.New("limit")         //限制超限
 	ErrRange            = errors.New("range overrun") //范围超限
+	ErrExists           = errors.New("exists")
 )
 
 //Try handler(err)

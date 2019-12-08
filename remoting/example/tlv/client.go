@@ -20,12 +20,13 @@ func main() {
 	config := remoting.DefaultTCPConfig()
 	config.IdleDuration = 0
 
-	clinet, err := remoting.NewClient("127.0.0.1:6379", config, handler.Adapter(), reg)
+	clinet := remoting.NewClient("127.0.0.1:6379", config, handler.Adapter(), reg)
+
+	err := clinet.Start()
 	if err != nil {
 		logs.Fatal(err)
 		return
 	}
-	clinet.Start()
 
 	for {
 		n := rand.Intn(1000)
