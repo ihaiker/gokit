@@ -98,10 +98,14 @@ func (s *rpcServer) Send(channel string, request *Request, timeout time.Duration
 	request.id = s.id.IncrementAndGet(1)
 
 	response := new(Response)
-	if ch, has := s.GetChannel(channel); has {
+	if ch, has := s.GetChannel(channel); !has {
 		response.Error = ErrNotFount
 	} else if err := ch.Write(request, timeout); err != nil {
 		response.Error = err
+	}
+
+	if response.Error != nil {
+		return response
 	}
 
 	rc := &responseCache{C: make(chan *Response)}
