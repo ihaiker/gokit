@@ -32,6 +32,8 @@ type Channel interface {
 
 	GetRemoteAddress() string
 
+	GetRemoteIp() string
+
 	Close()
 
 	//是否正在运行
@@ -284,6 +286,15 @@ func (self *tcpChannel) GetConnect() net.Conn {
 
 func (self *tcpChannel) GetRemoteAddress() string {
 	return self.connect.RemoteAddr().String()
+}
+
+func (self *tcpChannel) GetRemoteIp() string {
+	address := self.GetRemoteAddress()
+	idx := strings.Index(address, ":")
+	if idx != -1 {
+		address = address[0:idx]
+	}
+	return address
 }
 
 func (self *tcpChannel) unsendCallbackNotify() {

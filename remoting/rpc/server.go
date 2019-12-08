@@ -15,6 +15,7 @@ type RpcServer interface {
 	Shutdown()
 
 	GetChannelManager() remoting.ChannelManager
+	SetChannelManager(remoting.ChannelManager)
 
 	GetChannel(channel string) (ch remoting.Channel, has bool)
 
@@ -92,6 +93,10 @@ func (s *rpcServer) GetChannel(channel string) (remoting.Channel, bool) {
 
 func (s *rpcServer) GetChannelManager() remoting.ChannelManager {
 	return s.server.GetClientManager()
+}
+
+func (s *rpcServer) SetChannelManager(manager remoting.ChannelManager) {
+	s.server.SetClientManager(manager)
 }
 
 func (s *rpcServer) Send(channel string, request *Request, timeout time.Duration) *Response {
