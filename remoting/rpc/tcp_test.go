@@ -23,11 +23,11 @@ func onMessage(ch remoting.Channel, req *Request) *Response {
 }
 
 func TestRpcServer(t *testing.T) {
-	server, err := NewServer(":6379", onMessage, nil)
+	server := NewServer(":6379", onMessage, nil)
+	err := server.Start()
 	if err != nil {
 		t.Fatal(err)
 	}
-	server.Start()
 
 	<-time.After(time.Minute * 10)
 

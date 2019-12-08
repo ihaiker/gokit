@@ -8,7 +8,7 @@ import (
 )
 
 type RpcServer interface {
-	Start()
+	Start() error
 
 	Wait()
 
@@ -49,17 +49,13 @@ func NewServer(address string, onMessage OnMessage, onClose OnClose) RpcServer {
 func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage, onClose OnClose) RpcServer {
 	rpcServer := new(rpcServer)
 	rpcServer.id = atomic.NewAtomicUint32(0)
-	if server := remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse, onClose), coderMaker); err != nil {
-		return nil, err
-	} else {
-		rpcServer.server = server
-	}
+	rpcServer.server = remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse, onClose), coderMaker)
 	rpcServer.respCache = make(map[uint32]*responseCache)
 	return rpcServer
 }
 
-func (s *rpcServer) Start() {
-	s.server.Start()
+func (s *rpcServer) Start() error {
+	return s.server.Start()
 }
 
 func (s *rpcServer) Wait() {
