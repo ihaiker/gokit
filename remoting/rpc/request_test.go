@@ -10,6 +10,7 @@ func TestRequest(t *testing.T) {
 	request.id = 1000
 	request.URL = "/test"
 	request.Header("test", "test")
+	request.Header("key", "b")
 	request.Body = []byte(",testbody")
 	bs, _ := request.Encode()
 

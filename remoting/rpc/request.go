@@ -71,7 +71,7 @@ func (request *Request) Decode(bs []byte) (err error) {
 	}
 	if headerLen > 0 {
 		request.Headers = make(map[string]string, headerLen)
-		for i := uint8(0); i < headerLen; i += 2 {
+		for i := uint8(0); i < headerLen; i += 1 {
 			var key, value string
 			if key, err = reader.String(); err != nil {
 				return

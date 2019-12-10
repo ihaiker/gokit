@@ -29,6 +29,31 @@ func TryFinally(fun func(), handler func(error), finallyFn func()) {
 	Try(fun, handler)
 }
 
+//安全执行如果出错将被拦截
+func Safe(fun func() error) error {
+	var err error
+	Try(func() {
+		err = fun()
+	}, func(e error) {
+		err = e
+	})
+	return err
+}
+
+func SafeI(fun func() interface{}) interface{} {
+	var err interface{}
+	Try(func() {
+		err = fun()
+	}, func(e error) {
+		err = e
+	})
+	return err
+}
+
+func SafeExec(fun func()) {
+	Try(fun, func(err error) {})
+}
+
 func Catch(r interface{}) error {
 	var e error = nil
 	if r != nil {
