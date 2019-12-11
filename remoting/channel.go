@@ -50,8 +50,6 @@ const (
 )
 
 type tcpChannel struct {
-	attrs map[string]interface{}
-
 	config  *Config
 	connect net.Conn
 
@@ -80,8 +78,6 @@ func newChannel(config *Config, connect net.Conn) *tcpChannel {
 	}
 
 	return &tcpChannel{
-		attrs: map[string]interface{}{},
-
 		config: config, connect: connect,
 
 		closeOne: new(sync.Once), status: atomic.NewAtomicUint32(ready),

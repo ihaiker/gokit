@@ -16,7 +16,13 @@ func TestSignal(t *testing.T) {
 		lis.Stop()
 	}()
 
-	err := lis.WaitTimeout(time.Second, func() {
+	lis.OnClose(func() {
+		logger.Debug("关闭操作")
+	})
+	lis.OnClose(func() {
+		logger.Debug("该你操作！！！")
+	})
+	err := lis.WaitWithTimeout(time.Second, func() {
 		logs.Debug("关闭")
 	})
 	t.Log(err)

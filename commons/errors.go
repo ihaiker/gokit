@@ -11,6 +11,7 @@ var (
 	ErrLimit            = errors.New("limit")         //限制超限
 	ErrRange            = errors.New("range overrun") //范围超限
 	ErrExists           = errors.New("exists")
+	ErrNotSupport       = errors.New("NotSupport") //不支持
 )
 
 //Try handler(err)

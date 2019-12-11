@@ -12,11 +12,15 @@ import (
 var logger = logs.GetLogger("signal")
 
 type signalListener struct {
-	C chan os.Signal
+	C          chan os.Signal
+	onCloseFns []func()
 }
 
 func NewListener() *signalListener {
-	lis := &signalListener{C: make(chan os.Signal)}
+	lis := &signalListener{
+		C:          make(chan os.Signal),
+		onCloseFns: []func(){},
+	}
 	signal.Notify(lis.C, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
 	return lis
 }
@@ -40,28 +44,29 @@ func (sl *signalListener) Shutdown(timeout time.Duration) {
 	sl.Kill()
 }
 
+func (sl *signalListener) OnClose(fn func()) {
+	sl.onCloseFns = append(sl.onCloseFns, fn)
+}
+
 //等待程序退出,如果close函数阻塞也将无法退出
-func (sl *signalListener) Wait(close func()) error {
-	for s := range sl.C {
-		logs.Info("signal: ", s.String())
-		switch s {
-		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1:
-			close()
-			return nil
-		}
-	}
-	return nil
+func (sl *signalListener) WaitWith(close func()) error {
+	return sl.WaitWithTimeout(time.Hour, close)
 }
 
 //无调用的方式也可以退出
-func (sl *signalListener) WaitTimeout(timeout time.Duration, close func()) error {
+func (sl *signalListener) WaitWithTimeout(timeout time.Duration, closeFn func()) error {
 	for s := range sl.C {
 		logs.Info("signal: ", s.String())
 		switch s {
 		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1:
 			out := commons.AsyncTimeout(timeout, func() interface{} {
 				logger.Debug("close self")
-				close()
+				for _, onCloseFn := range sl.onCloseFns {
+					onCloseFn()
+				}
+				if closeFn != nil {
+					closeFn()
+				}
 				return nil
 			})
 			if e := <-out; e == commons.ErrAsyncTimeout {
@@ -74,4 +79,12 @@ func (sl *signalListener) WaitTimeout(timeout time.Duration, close func()) error
 		}
 	}
 	return nil
+}
+
+func (sl *signalListener) Wait() error {
+	return sl.WaitTimeout(time.Hour)
+}
+
+func (sl *signalListener) WaitTimeout(timeout time.Duration) error {
+	return sl.WaitWithTimeout(timeout, func() {})
 }
