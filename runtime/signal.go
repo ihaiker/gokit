@@ -11,13 +11,13 @@ import (
 
 var logger = logs.GetLogger("signal")
 
-type signalListener struct {
+type SignalListener struct {
 	C          chan os.Signal
 	onCloseFns []func()
 }
 
-func NewListener() *signalListener {
-	lis := &signalListener{
+func NewListener() *SignalListener {
+	lis := &SignalListener{
 		C:          make(chan os.Signal),
 		onCloseFns: []func(){},
 	}
@@ -26,35 +26,35 @@ func NewListener() *signalListener {
 }
 
 //正常退出
-func (sl *signalListener) Stop() {
+func (sl *SignalListener) Stop() {
 	logger.Debug("send stop signal: ", syscall.SIGUSR1.String())
 	sl.C <- syscall.SIGUSR1
 }
 
 //强制退出
-func (sl *signalListener) Kill() {
+func (sl *SignalListener) Kill() {
 	logger.Info("kill self")
 	os.Exit(0)
 }
 
 //关闭程序，首先使用Stop正常退出，然后使用Kill直接退出程序
-func (sl *signalListener) Shutdown(timeout time.Duration) {
+func (sl *SignalListener) Shutdown(timeout time.Duration) {
 	sl.Stop()
 	<-time.After(timeout)
 	sl.Kill()
 }
 
-func (sl *signalListener) OnClose(fn func()) {
+func (sl *SignalListener) OnClose(fn func()) {
 	sl.onCloseFns = append(sl.onCloseFns, fn)
 }
 
 //等待程序退出,如果close函数阻塞也将无法退出
-func (sl *signalListener) WaitWith(close func()) error {
+func (sl *SignalListener) WaitWith(close func()) error {
 	return sl.WaitWithTimeout(time.Hour, close)
 }
 
 //无调用的方式也可以退出
-func (sl *signalListener) WaitWithTimeout(timeout time.Duration, closeFn func()) error {
+func (sl *SignalListener) WaitWithTimeout(timeout time.Duration, closeFn func()) error {
 	for s := range sl.C {
 		logs.Info("signal: ", s.String())
 		switch s {
@@ -81,10 +81,10 @@ func (sl *signalListener) WaitWithTimeout(timeout time.Duration, closeFn func())
 	return nil
 }
 
-func (sl *signalListener) Wait() error {
+func (sl *SignalListener) Wait() error {
 	return sl.WaitTimeout(time.Hour)
 }
 
-func (sl *signalListener) WaitTimeout(timeout time.Duration) error {
+func (sl *SignalListener) WaitTimeout(timeout time.Duration) error {
 	return sl.WaitWithTimeout(timeout, func() {})
 }
