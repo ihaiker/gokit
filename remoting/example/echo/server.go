@@ -45,7 +45,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	runtimeKit.NewListener().WaitTimeout(time.Second, func() {
+	runtimeKit.NewListener().WaitWithTimeout(time.Second, func() {
 		server.Stop().Wait()
 	})
 }

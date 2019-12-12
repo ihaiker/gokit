@@ -13,13 +13,13 @@ var logger = logs.GetLogger("signal")
 
 type SignalListener struct {
 	C          chan os.Signal
-	onCloseFns []func()
+	OnCloseFns []func()
 }
 
 func NewListener() *SignalListener {
 	lis := &SignalListener{
 		C:          make(chan os.Signal),
-		onCloseFns: []func(){},
+		OnCloseFns: []func(){},
 	}
 	signal.Notify(lis.C, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
 	return lis
@@ -44,9 +44,15 @@ func (sl *SignalListener) Shutdown(timeout time.Duration) {
 	sl.Kill()
 }
 
+//从最后添加一个
 func (sl *SignalListener) OnClose(fn func()) {
-	sl.onCloseFns = append(sl.onCloseFns, fn)
+	sl.OnCloseFns = append(sl.OnCloseFns, fn)
 }
+
+func (sl *SignalListener) PrependOnClose(fn func()) {
+	sl.OnCloseFns = append([]func(){fn}, sl.OnCloseFns...)
+}
+
 
 //等待程序退出,如果close函数阻塞也将无法退出
 func (sl *SignalListener) WaitWith(close func()) error {
@@ -61,7 +67,7 @@ func (sl *SignalListener) WaitWithTimeout(timeout time.Duration, closeFn func())
 		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1:
 			out := commons.AsyncTimeout(timeout, func() interface{} {
 				logger.Debug("close self")
-				for _, onCloseFn := range sl.onCloseFns {
+				for _, onCloseFn := range sl.OnCloseFns {
 					onCloseFn()
 				}
 				if closeFn != nil {

@@ -11,11 +11,11 @@ import (
 )
 
 func main() {
+	defer logs.CloseAll()
+	logs.SetDebugMode(true)
 
 	reg := tlv.NewTLVCoder(1024)
 	_ = reg.Reg(msg.NewEcho(time.Now()))
-
-	logs.SetDebugMode(true)
 
 	config := remoting.DefaultTCPConfig()
 	config.IdleDuration = 0

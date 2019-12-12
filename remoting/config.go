@@ -16,7 +16,7 @@ type Config struct {
 
 	//心跳检测周期,单位秒
 	IdleDuration int `json:"idleDuration" yaml:"idleDuration" toml:"idleDuration"`
-	//心跳检测超时时间，单位秒
+	//心跳检测超时次数，多少次检测后失效
 	IdleTimeout int `json:"idleTimeout" yaml:"idleTimeout" toml:"idleTimeout"`
 
 	//写缓存大小

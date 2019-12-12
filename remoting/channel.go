@@ -133,7 +133,6 @@ func (self *tcpChannel) readLoop() {
 		case <-self.closeChan:
 			return
 		default:
-			_ = self.connect.SetReadDeadline(time.Now().Add(time.Second))
 			if msg, err := self.coder.Decode(self, self.connect); commons.NotNil(err) {
 				if isCloseTCPConnect(err) {
 					return
@@ -145,10 +144,9 @@ func (self *tcpChannel) readLoop() {
 					}
 				}
 			} else {
-				_ = self.connect.SetReadDeadline(time.Now().Add(time.Second))
 				self.resetIdle()
 				if self.config.AsynHandlerGroup > 0 {
-					//fixme 管理携程
+					//fixme 携程池管理
 					go commons.Try(func() {
 						self.handler.OnMessage(self, msg)
 					}, func(err error) {

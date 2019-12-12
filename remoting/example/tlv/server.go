@@ -38,6 +38,7 @@ func main() {
 	//	time.Sleep(time.Second * 30)
 	//	server.Stop()
 	//}()
+
 	err := server.Start()
 	if err != nil {
 		log.Fatal(err)

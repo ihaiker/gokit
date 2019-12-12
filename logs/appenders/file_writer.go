@@ -1,6 +1,7 @@
 package appenders
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/bluele/gcache"
 	"github.com/ihaiker/gokit/files"
@@ -69,7 +70,7 @@ func NewDailyRollingFileOut(fileName string) (io.Writer, error) {
 		return newFileout(fileName)
 	}).EvictedFunc(func(key, value interface{}) {
 		fd := value.(*os.File)
-		fmt.Println("close: ", key )
+		fmt.Println("close: ", key)
 		_ = fd.Close()
 	})
 
@@ -84,5 +85,9 @@ func newFileout(fileName string) (io.Writer, error) {
 	if err := _create_file_dir(logDir); err != nil {
 		return nil, err
 	}
-	return os.OpenFile(fileName, (os.O_APPEND | os.O_RDWR | os.O_CREATE), os.ModePerm)
+	if fw, err := os.OpenFile(fileName, (os.O_APPEND | os.O_RDWR | os.O_CREATE), os.ModePerm); err != nil {
+		return nil, err
+	} else {
+		return bufio.NewWriter(fw), nil
+	}
 }
