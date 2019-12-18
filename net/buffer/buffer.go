@@ -153,28 +153,28 @@ func (self *ByteReader) Int64() (int64, error) {
 }
 
 func (self *ByteReader) Byte() (byte, error) {
-	var i uint8;
+	var i uint8
 	err := self.number(&i)
 	return byte(i), err
 }
 
 func (self *ByteReader) UInt8() (uint8, error) {
-	var i uint8;
+	var i uint8
 	err := self.number(&i)
 	return i, err
 }
 func (self *ByteReader) UInt16() (uint16, error) {
-	var i uint16;
+	var i uint16
 	err := self.number(&i)
 	return i, err
 }
 func (self *ByteReader) UInt32() (uint32, error) {
-	var i uint32;
+	var i uint32
 	err := self.number(&i)
 	return i, err
 }
 func (self *ByteReader) UInt64() (uint64, error) {
-	var i uint64;
+	var i uint64
 	err := self.number(&i)
 	return i, err
 }

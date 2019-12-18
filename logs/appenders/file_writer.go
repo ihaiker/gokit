@@ -87,8 +87,10 @@ func NewDailyRollingFileOut(fileName string) (io.Writer, error) {
 	if err := _create_file_dir(logDir); err != nil {
 		return nil, err
 	}
-	layout, _ := MatchDailyRollingFile(fileName)
-
+	layout, match := MatchDailyRollingFile(fileName)
+	if ! match {
+		return files.New(fileName).GetWriter(true)
+	}
 	cb := gcache.New(1).LRU().Expiration(time.Hour)
 	cb.LoaderFunc(func(key interface{}) (interface{}, error) {
 		fileName := strings.Replace(fileName, "{"+layout+"}", key.(string), 1)
