@@ -2,17 +2,40 @@ package appenders
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"github.com/bluele/gcache"
 	"github.com/ihaiker/gokit/files"
-	"path/filepath"
-	"os"
-	"time"
-	"errors"
 	"io"
-	"strings"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
+	"time"
 )
+
+type ClosedBufIOWriter struct {
+	writer    io.Writer
+	bufWriter io.Writer
+}
+
+func NewClosedBufIOWriter(writer io.Writer) io.WriteCloser {
+	return &ClosedBufIOWriter{
+		writer:    writer,
+		bufWriter: bufio.NewWriter(writer),
+	}
+}
+func (self *ClosedBufIOWriter) Write(p []byte) (n int, err error) {
+	n, err = self.bufWriter.Write(p)
+	return
+}
+
+func (self *ClosedBufIOWriter) Close() error {
+	if closed, match := self.writer.(io.Closer); match {
+		return closed.Close()
+	}
+	return nil
+}
 
 //每日回滚日志
 type dailyRollingFile struct {
@@ -32,7 +55,9 @@ func (self *dailyRollingFile) Write(p []byte) (n int, err error) {
 
 func (self *dailyRollingFile) Close() error {
 	for _, out := range self.cache.GetALL(false) {
-		_ = out.(*os.File).Close()
+		if cl, match := out.(io.Closer); match {
+			_ = cl.Close()
+		}
 	}
 	return nil
 }
@@ -88,6 +113,6 @@ func newFileout(fileName string) (io.Writer, error) {
 	if fw, err := os.OpenFile(fileName, (os.O_APPEND | os.O_RDWR | os.O_CREATE), os.ModePerm); err != nil {
 		return nil, err
 	} else {
-		return bufio.NewWriter(fw), nil
+		return NewClosedBufIOWriter(fw), nil
 	}
 }

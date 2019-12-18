@@ -5,6 +5,8 @@ import (
 )
 
 func TestLogger(t *testing.T) {
+	defer CloseAll()
+
 	Root().Debug("root debug")
 	Root().Info("root info")
 	Root().Warn("root warnings")
