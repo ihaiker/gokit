@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 	"math"
 )
 
@@ -128,64 +129,42 @@ func NewReader(v []byte) *ByteReader {
 	return &ByteReader{reader: bytes.NewReader(v), ByteSize: BYTE16}
 }
 
-func (self *ByteReader) number(i interface{}) error {
-	return binary.Read(self.reader, binary.BigEndian, i)
-}
 func (self *ByteReader) Int8() (int8, error) {
-	var i int8
-	err := self.number(&i)
-	return i, err
+	return ReadInt8(self.reader)
 }
 func (self *ByteReader) Int16() (int16, error) {
-	var i int16
-	err := self.number(&i)
-	return i, err
+	return ReadInt16(self.reader)
 }
 func (self *ByteReader) Int32() (int32, error) {
-	var i int32
-	err := self.number(&i)
-	return i, err
+	return ReadInt32(self.reader)
 }
 func (self *ByteReader) Int64() (int64, error) {
-	var i int64
-	err := self.number(&i)
-	return i, err
+	return ReadInt64(self.reader)
 }
 
 func (self *ByteReader) Byte() (byte, error) {
-	var i uint8
-	err := self.number(&i)
+	i, err := ReadInt8(self.reader)
 	return byte(i), err
 }
 
 func (self *ByteReader) UInt8() (uint8, error) {
-	var i uint8
-	err := self.number(&i)
-	return i, err
+	return ReadUInt8(self.reader)
 }
 func (self *ByteReader) UInt16() (uint16, error) {
-	var i uint16
-	err := self.number(&i)
-	return i, err
+	return ReadUInt16(self.reader)
 }
 func (self *ByteReader) UInt32() (uint32, error) {
-	var i uint32
-	err := self.number(&i)
-	return i, err
+	return ReadUInt32(self.reader)
 }
 func (self *ByteReader) UInt64() (uint64, error) {
-	var i uint64
-	err := self.number(&i)
-	return i, err
+	return ReadUInt64(self.reader)
 }
 
 func (self *ByteReader) Float32() (float32, error) {
-	i, err := self.UInt32()
-	return math.Float32frombits(i), err
+	return ReadFloat32(self.reader)
 }
 func (self *ByteReader) Float64() (float64, error) {
-	i, err := self.UInt64()
-	return math.Float64frombits(i), err
+	return ReadFloat64(self.reader)
 }
 
 func (self *ByteReader) Bytes() ([]byte, error) {
@@ -197,16 +176,16 @@ func (self *ByteReader) Bytes() ([]byte, error) {
 		len = uint64(l)
 		err = e
 	case BYTE16:
-		l, e := self.UInt16();
-		len = uint64(l);
+		l, e := self.UInt16()
+		len = uint64(l)
 		err = e
 	case BYTE32:
-		l, e := self.UInt32();
-		len = uint64(l);
+		l, e := self.UInt32()
+		len = uint64(l)
 		err = e
 	case BYTE64:
-		l, e := self.UInt64();
-		len = uint64(l);
+		l, e := self.UInt64()
+		len = uint64(l)
 		err = e
 	}
 	if err != nil {
@@ -216,7 +195,7 @@ func (self *ByteReader) Bytes() ([]byte, error) {
 		return nil, nil
 	}
 	bs := make([]byte, len)
-	rlen, err := self.reader.Read(bs)
+	rlen, err := io.ReadFull(self.reader, bs)
 	if err != nil {
 		return nil, err
 	}

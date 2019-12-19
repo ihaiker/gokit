@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/ihaiker/gokit/logs"
+	"github.com/ihaiker/gokit/net/buffer"
 	"github.com/ihaiker/gokit/remoting"
 	"io"
 	"reflect"
@@ -77,8 +78,8 @@ func (self *tlvCoder) Encode(channel remoting.Channel, msg interface{}) ([]byte,
 }
 
 func (self *tlvCoder) Decode(channel remoting.Channel, c io.Reader) (interface{}, error) {
-	var typeId uint16 = 0
-	if err := binary.Read(c, binary.BigEndian, &typeId); err != nil {
+	typeId, err := buffer.ReadUInt16(c)
+	if err != nil {
 		return nil, err
 	}
 
@@ -87,8 +88,8 @@ func (self *tlvCoder) Decode(channel remoting.Channel, c io.Reader) (interface{}
 		return nil, ErrNotRegisterMessage
 	}
 
-	var length uint16
-	if err := binary.Read(c, binary.BigEndian, &length); err != nil {
+	length, err := buffer.ReadUInt16(c)
+	if err != nil {
 		return nil, err
 	}
 
@@ -102,7 +103,7 @@ func (self *tlvCoder) Decode(channel remoting.Channel, c io.Reader) (interface{}
 			return nil, err
 		}
 	}
-	
+
 	var msgValue reflect.Value
 	if msgType.Kind() == reflect.Ptr {
 		msgValue = reflect.New(msgType.Elem())

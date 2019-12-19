@@ -9,7 +9,7 @@ import (
 func TestResponse(t *testing.T) {
 	response := new(Response)
 	response.id = 3
-	response.Error = io.EOF
+	response.Error = nil
 	response.Body = []byte("response body")
 	bs, _ := response.Encode()
 
@@ -19,9 +19,9 @@ func TestResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, response.id, resp.id)
-	assert.Equal(t, response.Error, resp.Error)
-	assert.Equal(t, response.Body, resp.Body)
+	assert.Equal(t, response.id, resp.id,"id maths")
+	assert.Equal(t, response.Error, resp.Error,"error maths")
+	assert.Equal(t, response.Body, resp.Body,"body maths")
 }
 
 
