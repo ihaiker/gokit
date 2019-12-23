@@ -12,20 +12,20 @@ type AsyncFun func() interface{}
 func Async(f AsyncFun) chan interface{} {
 	ch := make(chan interface{})
 	go func() {
+		defer func() { _ = recover() }()
 		ch <- f()
 	}()
 	return ch
 }
 
-func AsyncTimeout(timeout time.Duration, f AsyncFun) chan interface{} {
-	ch := make(chan interface{})
-	go func() {
-		select {
-		case err := <-Async(f):
-			ch <- err
-		case <-time.After(timeout):
-			ch <- ErrAsyncTimeout
-		}
-	}()
-	return ch
+func AsyncTimeout(timeout time.Duration, f AsyncFun) (result interface{}) {
+	ch := Async(f)
+	select {
+	case result = <-ch:
+		close(ch)
+	case <-time.After(timeout):
+		close(ch)
+		result = ErrAsyncTimeout
+	}
+	return result
 }

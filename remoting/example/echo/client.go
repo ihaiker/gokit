@@ -22,9 +22,9 @@ func main() {
 
 	for {
 		time.Sleep(time.Millisecond * 10)
-		err := clinet.Send(time.Now(), time.Second)
+		err := clinet.Write(time.Now(), time.Second)
 		if err != nil {
-			clinet.Close()
+			_ = clinet.Close()
 			break
 		}
 	}

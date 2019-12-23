@@ -11,50 +11,47 @@ import (
 )
 
 //发送消息回调
-type SendMessageCallBack func(msg interface{}, err error)
+type SendMessageResult func(msg interface{}, err error)
 
 type asyncMessage struct {
 	msg      interface{}
 	timeout  time.Time
-	callback SendMessageCallBack
+	callback SendMessageResult
 }
 
 //连接保持器
 type Channel interface {
+
 	//同步发送消息
 	Write(msg interface{}, timeout time.Duration) (err error)
 
 	//异步发送消息
-	AsyncWrite(msg interface{}, timeout time.Duration, sendCallback SendMessageCallBack)
+	AsyncWrite(msg interface{}, timeout time.Duration, result SendMessageResult)
 
-	//返回连接器
-	GetConnect() net.Conn
-
+	//获取远程连接地址
 	GetRemoteAddress() string
 
+	//获取远程的IP地址
 	GetRemoteIp() string
 
-	Close()
+	GetStatus() Status
 
-	//是否正在运行
-	IsRunning() bool
+	//关闭
+	Close() error
+
+	Wait()
 
 	commons.Attributes
 }
 
-const (
-	ready uint32 = iota
-	starting
-	stoping
-	stoped
-)
-
 type tcpChannel struct {
-	config  *Config
+	config *Config
+
 	connect net.Conn
 
 	closeOne *sync.Once
-	status   *atomic.AtomicUint32
+
+	status Status
 
 	group *sync.WaitGroup
 
@@ -71,16 +68,18 @@ type tcpChannel struct {
 }
 
 func newChannel(config *Config, connect net.Conn) *tcpChannel {
+
 	if tcpCon, match := connect.(*net.TCPConn); match {
 		_ = tcpCon.SetKeepAlive(true)
 		_ = tcpCon.SetNoDelay(true)
+		_ = tcpCon.SetReadBuffer(config.ReadBufferSize)
 		_ = tcpCon.SetWriteBuffer(config.WriteBufferSize)
 	}
 
 	return &tcpChannel{
 		config: config, connect: connect,
 
-		closeOne: new(sync.Once), status: atomic.NewAtomicUint32(ready),
+		closeOne: new(sync.Once), status: Ready,
 		group: new(sync.WaitGroup),
 
 		closeChan: make(chan struct{}),
@@ -90,43 +89,65 @@ func newChannel(config *Config, connect net.Conn) *tcpChannel {
 	}
 }
 
+//安全执行外部方法
+func (self *tcpChannel) safeNotfiy(fn func(channel Channel)) {
+	if fn == nil {
+		return
+	}
+	_ = commons.AsyncTimeout(time.Second, func() interface{} {
+		return commons.SafeExec(func() { fn(self) })
+	})
+}
+
+//安全执行外部方法
+func (self *tcpChannel) safeNotifyError(fn func(Channel, error), err error) {
+	if fn == nil {
+		return
+	}
+	_ = commons.AsyncTimeout(time.Second, func() interface{} {
+		return commons.SafeExec(func() {
+			fn(self, err)
+		})
+	})
+}
+
+func (self *tcpChannel) syncDo(fn func()) {
+	defer self.group.Done()
+	fn()
+}
+
 //connected 连接后回调
 //closed 关闭后回调
 func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 	defer func() {
-		logger.Debug("channel运行结束")
+		logger.Debug("channel over: ", self)
 		self.closeChannel()
-		if closed != nil {
-			closed(self)
-		}
-		self.handler.OnClose(self)
+		self.safeNotfiy(self.handler.OnClose)
+		self.safeNotfiy(closed)
 	}()
-	self.status.Set(starting)
+
+	logger.Debug("channel start: ", self)
+
 	self.group.Add(3)
 
 	go self.syncDo(self.heartbeatLoop)
 	go self.syncDo(self.readLoop)
 	go self.syncDo(self.writeLoop)
 
-	if connected != nil {
-		connected(self)
-	}
-	self.handler.OnConnect(self)
+	self.safeNotfiy(self.handler.OnConnect)
+	self.safeNotfiy(connected)
 
-	self.wait()
-}
+	self.status = Running
 
-func (c *tcpChannel) syncDo(fn func()) {
-	defer c.group.Done()
-	fn()
+	self.Wait()
 }
 
 func (self *tcpChannel) readLoop() {
-	logger.Debug("reader channel start: ", self.GetRemoteAddress())
 	defer func() {
 		self.closeChannel()
-		logger.Debug("reader channel close: ", self.GetRemoteAddress())
+		logger.Debug("channel reader close: ", self)
 	}()
+	logger.Debug("channel reader start: ", self)
 
 	for {
 		select {
@@ -134,13 +155,13 @@ func (self *tcpChannel) readLoop() {
 			return
 		default:
 			if msg, err := self.coder.Decode(self, self.connect); commons.NotNil(err) {
-				if isCloseTCPConnect(err) {
+				if isCloseTCPConnect(err) { //连接已经关闭
 					return
 				}
 				if !strings.Contains(err.Error(), "i/o timeout") {
-					if self.IsRunning() {
-						logger.Errorf("服务监听错误：%s", err)
-						self.handler.OnDecodeError(self, err)
+					if self.GetStatus().IsStart() {
+						logger.Error("channel decode error: ", err)
+						self.safeNotifyError(self.handler.OnDecodeError, err)
 					}
 				}
 			} else {
@@ -150,12 +171,14 @@ func (self *tcpChannel) readLoop() {
 					go commons.Try(func() {
 						self.handler.OnMessage(self, msg)
 					}, func(err error) {
+						defer func() { _ = recover() }()
 						self.handler.OnError(self, msg, err)
 					})
 				} else {
 					commons.Try(func() {
 						self.handler.OnMessage(self, msg)
 					}, func(err error) {
+						defer func() { _ = recover() }()
 						self.handler.OnError(self, msg, err)
 					})
 				}
@@ -165,17 +188,18 @@ func (self *tcpChannel) readLoop() {
 }
 
 func (self *tcpChannel) writeLoop() {
-	logger.Debug("启动 write 携程")
 	defer func() {
-		logger.Debugf("关闭 writer 携程: %s", self.GetRemoteAddress())
+		logger.Debug("channel write stop: ", self)
 		self.closeChannel()
 	}()
+	logger.Debug("channel write start: ", self)
+
 	for {
 		select {
 		case <-self.closeChan:
 			return
 		case asyncMsg := <-self.sendChan:
-			if !self.IsRunning() {
+			if !self.GetStatus().IsStart() {
 				return
 			}
 			if time.Now().Before(asyncMsg.timeout) {
@@ -199,17 +223,14 @@ func (self *tcpChannel) writeLoop() {
 
 func (self *tcpChannel) heartbeatLoop() {
 	if self.config.IdleDuration == 0 {
-		logger.Debug(self.GetRemoteAddress(), " 不进行心跳检测！")
 		return
 	}
-
-	logger.Debug("启动心跳检测携程:", self.GetRemoteAddress())
-
+	logger.Debug("channel ttl start:", self)
 	self.idleTimer = time.NewTimer(time.Second * time.Duration(self.config.IdleDuration))
 	self.idleTimeout = atomic.NewAtomicInt32(0)
 
 	defer func() {
-		logger.Debugf("关闭心跳检测: %s", self.GetRemoteAddress())
+		logger.Debug("channel ttl stop:", self)
 		self.idleTimer.Stop()
 		self.closeChannel()
 	}()
@@ -221,7 +242,7 @@ func (self *tcpChannel) heartbeatLoop() {
 		case <-self.idleTimer.C:
 			self.idleTimer.Reset(time.Second * time.Duration(self.config.IdleDuration))
 			if self.idleTimeout.GetAndIncrement(1) >= int32(self.config.IdleTimeout) {
-				logger.Debug("连接超时未检测到：", self.GetRemoteAddress())
+				logger.Debug("channel ttl timeout：", self)
 				return
 			}
 			self.handler.OnIdle(self)
@@ -236,7 +257,7 @@ func (self *tcpChannel) resetIdle() {
 	}
 }
 
-func (self *tcpChannel) wait() {
+func (self *tcpChannel) Wait() {
 	self.group.Wait()
 }
 
@@ -260,8 +281,8 @@ func (self *tcpChannel) Write(msg interface{}, timeout time.Duration) (err error
 	return <-result
 }
 
-func (self *tcpChannel) AsyncWrite(msg interface{}, timeout time.Duration, sendCallback SendMessageCallBack) {
-	if !self.IsRunning() {
+func (self *tcpChannel) AsyncWrite(msg interface{}, timeout time.Duration, sendCallback SendMessageResult) {
+	if !self.GetStatus().IsStart() {
 		sendCallback(msg, ErrConnectClosed)
 		return
 	}
@@ -291,35 +312,36 @@ func (self *tcpChannel) GetRemoteIp() string {
 	return address
 }
 
-func (self *tcpChannel) unsendCallbackNotify() {
+func (self *tcpChannel) unsendNotify() {
 	close(self.sendChan)
 	for msg := range self.sendChan {
 		msg.callback(msg.msg, ErrConnectClosed)
 	}
 }
 
+func (self *tcpChannel) GetStatus() Status {
+	return self.status
+}
+
+//关闭服务
 func (self *tcpChannel) closeChannel() {
 	self.closeOne.Do(func() {
-		logger.Debug("关闭 channel：", self.GetRemoteAddress())
-		self.status.CompareAndSet(starting, stoping)
-
+		logger.Debug("close channel：", self)
+		_ = self.connect.Close()
+		self.status = Stoped
 		close(self.closeChan)
-
-		if err := self.connect.Close(); err != nil {
-			logger.Error("关闭连接异常：", self.GetRemoteAddress(), ", error:", err)
-		}
-
-		self.status.CompareAndSet(stoping, stoped)
-
-		self.unsendCallbackNotify()
+		self.unsendNotify()
 	})
 }
 
-func (self *tcpChannel) Close() {
+//关闭服务并等待退出
+func (self *tcpChannel) Close() error {
 	self.closeChannel()
-	self.group.Wait()
+	return nil
 }
 
-func (self *tcpChannel) IsRunning() bool {
-	return self.status.Get() == starting
+
+
+func (self *tcpChannel) String() string {
+	return self.GetRemoteAddress()
 }

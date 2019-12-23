@@ -51,17 +51,17 @@ func newHandler(onMessage OnMessage, onResponse OnResponse, onClose OnClose) rem
 			onClose(session)
 		}
 	}).WithOnIdle(func(ch remoting.Channel) {
-		logger.Debug("write ping to:", ch.GetRemoteAddress())
+		logger.Debug("write ping to:", ch)
 		_ = ch.Write(ping, time.Second)
 	}).WithOnDecodeError(func(ch remoting.Channel, err error) {
-		logger.Debug("decoder on:", ch.GetRemoteAddress(), ", error:", err)
-		ch.Close()
+		logger.Debug("decoder on:", ch, ", error:", err)
+		_ = ch.Close()
 	}).WithOnEncodeError(func(ch remoting.Channel, msg interface{}, err error) {
-		logger.Debug("encode on:", ch.GetRemoteAddress(), ", error:", err)
-		ch.Close()
+		logger.Debug("encode on:", ch, ", error:", err)
+		_ = ch.Close()
 	}).WithOnError(func(ch remoting.Channel, msg interface{}, err error) {
-		logger.Debug("error on:", ch.GetRemoteAddress(), ", error:", err)
-		ch.Close()
+		logger.Debug("error on:", ch, ", error:", err)
+		_ = ch.Close()
 	}).WithOnMessage(func(ch remoting.Channel, msg interface{}) {
 		pkg := msg.(tlv.Message)
 		switch pkg.TypeID() {
@@ -71,7 +71,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse, onClose OnClose) rem
 			//do nothing
 		case REQUEST:
 			req := msg.(*Request)
-			logger.Debug("request: ", req.URL, ", ch:", ch.GetRemoteAddress())
+			logger.Debug("request: ", req.URL, ", ch:", ch)
 			commons.Try(func() {
 				if resp := onMessage(ch, req); resp != nil {
 					if err := ch.Write(resp, time.Second); err != nil {
@@ -88,7 +88,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse, onClose OnClose) rem
 				}
 			})
 		case RESPONSE:
-			logger.Debug("response: ", msg.(*Response).id, ", ch:", ch.GetRemoteAddress())
+			logger.Debug("response: ", msg.(*Response).id, ", ch:", ch)
 			onResponse(msg.(*Response))
 		}
 	})

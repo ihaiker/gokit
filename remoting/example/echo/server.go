@@ -46,6 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 	runtimeKit.NewListener().WaitWithTimeout(time.Second, func() {
-		server.Stop().Wait()
+		_ = server.Stop()
+		server.Wait()
 	})
 }

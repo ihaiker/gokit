@@ -112,7 +112,8 @@ func newFileout(fileName string) (io.Writer, error) {
 	if err := _create_file_dir(logDir); err != nil {
 		return nil, err
 	}
-	if fw, err := os.OpenFile(fileName, (os.O_APPEND | os.O_RDWR | os.O_CREATE), os.ModePerm); err != nil {
+
+	if fw, err := os.OpenFile(fileName, (os.O_WRONLY|os.O_CREATE|os.O_APPEND), 0600); err != nil {
 		return nil, err
 	} else {
 		return NewClosedBufIOWriter(fw), nil

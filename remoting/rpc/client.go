@@ -10,7 +10,9 @@ import (
 type RpcClient interface {
 	Start() error
 
-	Shutdown()
+	Close() error
+
+	Wait()
 
 	Send(request *Request, timeout time.Duration) (response *Response)
 
@@ -41,8 +43,11 @@ func (s *rpcClient) Start() error {
 	return s.client.Start()
 }
 
-func (s *rpcClient) Shutdown() {
-	s.client.Close()
+func (s *rpcClient) Close() error {
+	return s.client.Close()
+}
+
+func (s *rpcClient) Wait() {
 	s.client.Wait()
 }
 
@@ -68,7 +73,7 @@ func (s *rpcClient) Send(request *Request, timeout time.Duration) *Response {
 
 	logger.Debug("client send :", request.id, " ", request.URL)
 	response := new(Response)
-	if err := s.client.Send(request, timeout); err != nil {
+	if err := s.client.Write(request, timeout); err != nil {
 		response.Error = err
 		return response
 	}
@@ -93,7 +98,7 @@ func (s *rpcClient) Async(request *Request, timeout time.Duration, callback func
 	request.id = s.id.IncrementAndGet(1)
 
 	rc := &responseCache{callback: callback, timeout: time.Now().Add(timeout)}
-	if err := s.client.Send(request, timeout); err != nil {
+	if err := s.client.Write(request, timeout); err != nil {
 		callback(&Response{Error: err, id: request.id})
 	} else {
 		s.respCache[request.id] = rc

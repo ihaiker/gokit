@@ -19,6 +19,9 @@ type Config struct {
 	//心跳检测超时次数，多少次检测后失效
 	IdleTimeout int `json:"idleTimeout" yaml:"idleTimeout" toml:"idleTimeout"`
 
+	//读缓存大小
+	ReadBufferSize int `json:"readBufferSize" yaml:"readBufferSize" toml:"readBufferSize"`
+
 	//写缓存大小
 	WriteBufferSize int `json:"writeBufferSize" yaml:"writeBufferSize" yaml:"writeBufferSize"`
 }
@@ -34,6 +37,7 @@ func DefaultTCPConfig() *Config {
 		AsynHandlerGroup: 100,
 		IdleDuration:     3,
 		IdleTimeout:      3,
-		WriteBufferSize:  16,
+		WriteBufferSize:  512,
+		ReadBufferSize:   512,
 	}
 }

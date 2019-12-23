@@ -7,9 +7,9 @@ import (
 
 type Client interface {
 	Start() error
-	Close()
-	Send(msg interface{}, timeout time.Duration) error
-	Async(msg interface{}, timeout time.Duration, callback SendMessageCallBack)
+	Close() error
+	Write(msg interface{}, timeout time.Duration) error
+	AsyncWrite(msg interface{}, timeout time.Duration, callback SendMessageResult)
 	GetChannel() Channel
 	Wait()
 }
@@ -39,15 +39,15 @@ func (self *tcpClient) Start() (err error) {
 	return nil
 }
 
-func (self *tcpClient) Close() {
-	self.channel.Close()
+func (self *tcpClient) Close() error {
+	return self.channel.Close()
 }
 
-func (self *tcpClient) Send(msg interface{}, timeout time.Duration) error {
+func (self *tcpClient) Write(msg interface{}, timeout time.Duration) error {
 	return self.channel.Write(msg, timeout)
 }
 
-func (self *tcpClient) Async(msg interface{}, timeout time.Duration, cb SendMessageCallBack) {
+func (self *tcpClient) AsyncWrite(msg interface{}, timeout time.Duration, cb SendMessageResult) {
 	self.channel.AsyncWrite(msg, timeout, cb)
 }
 
@@ -56,7 +56,7 @@ func (self *tcpClient) GetChannel() Channel {
 }
 
 func (self *tcpClient) Wait() {
-	self.channel.wait()
+	self.channel.Wait()
 }
 
 func NewClient(address string, config *Config, handler Handler, coder Coder) Client {

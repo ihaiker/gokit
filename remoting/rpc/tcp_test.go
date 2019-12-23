@@ -31,7 +31,9 @@ func TestRpcServer(t *testing.T) {
 
 	<-time.After(time.Minute * 10)
 
-	server.Shutdown()
+	_ = server.Close()
+
+	server.Wait()
 }
 
 func TestRpcClient(t *testing.T) {

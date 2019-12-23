@@ -5,15 +5,6 @@ import (
 	"fmt"
 )
 
-var (
-	ErrNotFound         = errors.New("not found")
-	ErrInvalidParameter = errors.New("invalid parameter")
-	ErrLimit            = errors.New("limit")         //限制超限
-	ErrRange            = errors.New("range overrun") //范围超限
-	ErrExists           = errors.New("exists")
-	ErrNotSupport       = errors.New("NotSupport") //不支持
-)
-
 //Try handler(err)
 func Try(fun func(), handler func(error)) {
 	defer func() {
@@ -51,8 +42,11 @@ func SafeI(fun func() interface{}) interface{} {
 	return err
 }
 
-func SafeExec(fun func()) {
-	Try(fun, func(err error) {})
+func SafeExec(fun func()) (err error) {
+	Try(fun, func(e error) {
+		err = e
+	})
+	return err
 }
 
 func Catch(r interface{}) error {

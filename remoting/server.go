@@ -2,10 +2,7 @@ package remoting
 
 import (
 	"net"
-	"reflect"
-	"strings"
 	"sync"
-	"time"
 )
 
 type Server interface {
@@ -13,7 +10,7 @@ type Server interface {
 	Start() error
 
 	//关闭服务
-	Stop() Server
+	Stop() error
 
 	Wait()
 
@@ -56,48 +53,32 @@ func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderM
 }
 
 func (s *tcpServer) startAccept() {
-	defer func() {
-		_ = s.listener.Close()
-		s.waitGroup.Done()
-	}()
-	logger.Info("服务启动：", s.listener.Addr().String())
+	defer s.waitGroup.Done()
 
-	isTcp := reflect.TypeOf(s.listener).String() == reflect.TypeOf(new(net.TCPListener)).String()
-	if ! isTcp {
-		s.listener.(*net.UnixListener).SetUnlinkOnClose(true)
-	}
+	logger.Info("remoting start：", s.listener.Addr().String())
+
 	for {
 		select {
 		case <-s.exitChan:
 			return
 		default:
-			if isTcp {
-				_ = s.listener.(*net.TCPListener).SetDeadline(time.Now().Add(time.Second))
-			} else {
-				_ = s.listener.(*net.UnixListener).SetDeadline(time.Now().Add(time.Second))
-			}
-
 			conn, err := s.listener.Accept()
 			if err != nil {
-				if !strings.Contains(err.Error(), "i/o timeout") {
-					logger.Errorf("服务监听错误：%s", err)
-				}
-				continue
+				return
 			}
 
-			s.waitGroup.Add(1)
-			addr := conn.RemoteAddr().String()
-			logger.Debug("客户端连接服务器：", addr)
-
 			channel := newChannel(s.config, conn)
+			logger.Debug("client connect：", channel)
 
 			channel.coder = s.coderMaker(channel)
 			channel.handler = s.handlerMaker(channel)
 
 			s.clients.Add(channel)
+
+			s.waitGroup.Add(1)
 			go channel.do(func(Channel) {}, func(c Channel) {
 				defer s.waitGroup.Done()
-				logger.Debug("客户端关闭连接：", addr)
+				logger.Debug("client close：", c)
 				s.clients.Remove(c)
 			})
 		}
@@ -116,6 +97,7 @@ func (s *tcpServer) Start() (err error) {
 
 func (s *tcpServer) Wait() {
 	s.waitGroup.Wait()
+	logger.Debug("server stoped")
 }
 
 //根据客户端clientId获取客户连接
@@ -131,15 +113,11 @@ func (s *tcpServer) SetClientManager(manager ChannelManager) {
 }
 
 // Stop stops service
-func (s *tcpServer) Stop() Server {
+func (s *tcpServer) Stop() error {
 	s.closeOne.Do(func() {
-		logger.Info("关闭TCP服务")
+		logger.Info("close server")
+		_ = s.listener.Close()
 		close(s.exitChan)
-		s.clients.Foreach(func(channel Channel) {
-			channel.Close()
-		})
-		logger.Debug("关闭TCP服务完成")
 	})
-	s.waitGroup.Wait()
-	return s
+	return nil
 }

@@ -12,7 +12,7 @@ type RpcServer interface {
 
 	Wait()
 
-	Shutdown()
+	Close() error
 
 	GetChannelManager() remoting.ChannelManager
 	SetChannelManager(remoting.ChannelManager)
@@ -62,8 +62,8 @@ func (s *rpcServer) Wait() {
 	s.server.Wait()
 }
 
-func (s *rpcServer) Shutdown() {
-	s.server.Stop().Wait()
+func (s *rpcServer) Close() error {
+	return s.server.Stop()
 }
 
 func (s *rpcServer) onResponse(resp *Response) {
@@ -104,13 +104,15 @@ func (s *rpcServer) Send(channel string, request *Request, timeout time.Duration
 	} else if err := ch.Write(request, timeout); err != nil {
 		response.Error = err
 	}
-
 	if response.Error != nil {
 		return response
 	}
 
 	rc := &responseCache{C: make(chan *Response)}
+	defer rc.Close()
+
 	s.respCache[request.id] = rc
+	defer delete(s.respCache, request.id)
 
 	select {
 	case resp := <-rc.C:
@@ -118,9 +120,6 @@ func (s *rpcServer) Send(channel string, request *Request, timeout time.Duration
 	case <-time.After(timeout):
 		response.Error = ErrRpcTimeout
 	}
-
-	delete(s.respCache, request.id)
-	rc.Close()
 
 	return response
 }
@@ -131,11 +130,10 @@ func (s *rpcServer) Async(channel string, request *Request, timeout time.Duratio
 	if ch, has := s.GetChannel(channel); !has {
 		callback(&Response{Error: ErrNotFount, id: request.id})
 	} else {
-		rc := &responseCache{callback: callback, timeout: time.Now().Add(timeout)}
 		if err := ch.Write(request, timeout); err != nil {
 			callback(&Response{Error: err, id: request.id})
 		} else {
-			s.respCache[request.id] = rc
+			s.respCache[request.id] = &responseCache{callback: callback, timeout: time.Now().Add(timeout)}
 		}
 	}
 }

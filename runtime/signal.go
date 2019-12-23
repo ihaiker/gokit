@@ -21,14 +21,14 @@ func NewListener() *SignalListener {
 		C:          make(chan os.Signal),
 		OnCloseFns: []func(){},
 	}
-	signal.Notify(lis.C, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(lis.C, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, )
 	return lis
 }
 
 //正常退出
 func (sl *SignalListener) Stop() {
-	logger.Debug("send stop signal: ", syscall.SIGUSR1.String())
-	sl.C <- syscall.SIGUSR1
+	logger.Debug("send stop signal: ", syscall.SIGTERM.String())
+	sl.C <- syscall.SIGTERM
 }
 
 //强制退出
@@ -53,7 +53,6 @@ func (sl *SignalListener) PrependOnClose(fn func()) {
 	sl.OnCloseFns = append([]func(){fn}, sl.OnCloseFns...)
 }
 
-
 //等待程序退出,如果close函数阻塞也将无法退出
 func (sl *SignalListener) WaitWith(close func()) error {
 	return sl.WaitWithTimeout(time.Hour, close)
@@ -64,9 +63,9 @@ func (sl *SignalListener) WaitWithTimeout(timeout time.Duration, closeFn func())
 	for s := range sl.C {
 		logs.Info("signal: ", s.String())
 		switch s {
-		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1:
-			out := commons.AsyncTimeout(timeout, func() interface{} {
-				logger.Debug("close self")
+		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+			err := commons.AsyncTimeout(timeout, func() interface{} {
+				logger.Debug("close by signal")
 				for _, onCloseFn := range sl.OnCloseFns {
 					onCloseFn()
 				}
@@ -75,13 +74,12 @@ func (sl *SignalListener) WaitWithTimeout(timeout time.Duration, closeFn func())
 				}
 				return nil
 			})
-			if e := <-out; e == commons.ErrAsyncTimeout {
+			if err == commons.ErrAsyncTimeout {
 				logger.Info("close timeout: ", timeout.String())
 				sl.Kill()
 				return commons.ErrAsyncTimeout
-			} else {
-				return nil
 			}
+			return nil
 		}
 	}
 	return nil
