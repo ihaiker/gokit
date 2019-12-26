@@ -1,6 +1,7 @@
 package remoting
 
 import (
+	"github.com/ihaiker/gokit/concurrent/executors"
 	"net"
 	"sync"
 )
@@ -35,17 +36,19 @@ type tcpServer struct {
 
 	closeOne  *sync.Once
 	waitGroup *sync.WaitGroup
+
+	worker *executors.GrPool
 }
 
 func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderMaker CoderMaker) Server {
 	return &tcpServer{
-		address: address,
-		config:  config,
+		address: address, config: config,
 
 		handlerMaker: handlerMaker,
 		coderMaker:   coderMaker,
 
 		clients: NewIpClientManager(),
+		worker:  executors.NewPoolDefault(config.AsyncHandlerGroup),
 
 		exitChan: make(chan struct{}),
 		closeOne: new(sync.Once), waitGroup: new(sync.WaitGroup),
@@ -67,7 +70,7 @@ func (s *tcpServer) startAccept() {
 				return
 			}
 
-			channel := newChannel(s.config, conn)
+			channel := newChannel(s.config, s.worker, conn)
 			logger.Debug("client connect：", channel)
 
 			channel.coder = s.coderMaker(channel)
@@ -117,6 +120,7 @@ func (s *tcpServer) Stop() error {
 	s.closeOne.Do(func() {
 		logger.Info("close server")
 		_ = s.listener.Close()
+		s.worker.Shutdown()
 		close(s.exitChan)
 	})
 	return nil

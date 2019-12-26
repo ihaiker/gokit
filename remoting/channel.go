@@ -3,6 +3,7 @@ package remoting
 import (
 	"github.com/ihaiker/gokit/commons"
 	"github.com/ihaiker/gokit/concurrent/atomic"
+	"github.com/ihaiker/gokit/concurrent/executors"
 	"io"
 	"net"
 	"strings"
@@ -65,9 +66,11 @@ type tcpChannel struct {
 
 	idleTimer   *time.Timer
 	idleTimeout *atomic.AtomicInt32
+
+	worker *executors.GrPool
 }
 
-func newChannel(config *Config, connect net.Conn) *tcpChannel {
+func newChannel(config *Config, worker *executors.GrPool, connect net.Conn) *tcpChannel {
 
 	if tcpCon, match := connect.(*net.TCPConn); match {
 		_ = tcpCon.SetKeepAlive(true)
@@ -77,7 +80,7 @@ func newChannel(config *Config, connect net.Conn) *tcpChannel {
 	}
 
 	return &tcpChannel{
-		config: config, connect: connect,
+		config: config, connect: connect, worker: worker,
 
 		closeOne: new(sync.Once), status: Ready,
 		group: new(sync.WaitGroup),
@@ -90,12 +93,13 @@ func newChannel(config *Config, connect net.Conn) *tcpChannel {
 }
 
 //安全执行外部方法
-func (self *tcpChannel) safeNotfiy(fn func(channel Channel)) {
+func (self *tcpChannel) safeNotify(fn func(channel Channel)) {
 	if fn == nil {
 		return
 	}
 	_ = commons.AsyncTimeout(time.Second, func() interface{} {
-		return commons.SafeExec(func() { fn(self) })
+		fn(self)
+		return nil
 	})
 }
 
@@ -122,8 +126,8 @@ func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 	defer func() {
 		logger.Debug("channel over: ", self)
 		self.closeChannel()
-		self.safeNotfiy(self.handler.OnClose)
-		self.safeNotfiy(closed)
+		self.safeNotify(self.handler.OnClose)
+		self.safeNotify(closed)
 	}()
 
 	logger.Debug("channel start: ", self)
@@ -134,8 +138,8 @@ func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 	go self.syncDo(self.readLoop)
 	go self.syncDo(self.writeLoop)
 
-	self.safeNotfiy(self.handler.OnConnect)
-	self.safeNotfiy(connected)
+	self.safeNotify(self.handler.OnConnect)
+	self.safeNotify(connected)
 
 	self.status = Running
 
@@ -166,21 +170,18 @@ func (self *tcpChannel) readLoop() {
 				}
 			} else {
 				self.resetIdle()
-				if self.config.AsynHandlerGroup > 0 {
-					//fixme 携程池管理
-					go commons.Try(func() {
-						self.handler.OnMessage(self, msg)
-					}, func(err error) {
-						defer func() { _ = recover() }()
-						self.handler.OnError(self, msg, err)
-					})
-				} else {
+				handlerMessage := func() {
 					commons.Try(func() {
 						self.handler.OnMessage(self, msg)
 					}, func(err error) {
 						defer func() { _ = recover() }()
 						self.handler.OnError(self, msg, err)
 					})
+				}
+				if self.worker != nil { //异步执行
+					self.worker.Add(handlerMessage)
+				} else {
+					handlerMessage()
 				}
 			}
 		}
@@ -339,8 +340,6 @@ func (self *tcpChannel) Close() error {
 	self.closeChannel()
 	return nil
 }
-
-
 
 func (self *tcpChannel) String() string {
 	return self.GetRemoteAddress()

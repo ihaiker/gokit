@@ -12,7 +12,11 @@ type AsyncFun func() interface{}
 func Async(f AsyncFun) chan interface{} {
 	ch := make(chan interface{})
 	go func() {
-		defer func() { _ = recover() }()
+		defer func() {
+			if err := recover(); err != nil {
+				ch <- err
+			}
+		}()
 		ch <- f()
 	}()
 	return ch

@@ -12,7 +12,7 @@ type Config struct {
 	ReceiveChanLimit int `json:"receiveChanLimit" yaml:"receiveChanLimit" yaml:"receiveChanLimit"`
 
 	//是否异步处理接收的消息，队列大小
-	AsynHandlerGroup int `json:"asynHandlerGroup" yaml:"asynHandlerGroup" yaml:"asynHandlerGroup"`
+	AsyncHandlerGroup int `json:"asyncHandlerGroup" yaml:"asyncHandlerGroup" toml:"asyncHandlerGroup"`
 
 	//心跳检测周期,单位秒
 	IdleDuration int `json:"idleDuration" yaml:"idleDuration" toml:"idleDuration"`
@@ -34,10 +34,10 @@ func (cfg *Config) String() string {
 func DefaultTCPConfig() *Config {
 	return &Config{
 		SendChanLimit: 1000, ReceiveChanLimit: 1000,
-		AsynHandlerGroup: 100,
-		IdleDuration:     3,
-		IdleTimeout:      3,
-		WriteBufferSize:  512,
-		ReadBufferSize:   512,
+		AsyncHandlerGroup: 100,
+		IdleDuration:      3,
+		IdleTimeout:       3,
+		WriteBufferSize:   512,
+		ReadBufferSize:    512,
 	}
 }
