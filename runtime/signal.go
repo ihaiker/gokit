@@ -92,3 +92,19 @@ func (sl *SignalListener) Wait() error {
 func (sl *SignalListener) WaitTimeout(timeout time.Duration) error {
 	return sl.WaitWithTimeout(timeout, func() {})
 }
+
+func Wait() error {
+	return NewListener().WaitTimeout(time.Second * 7)
+}
+
+func WaitT(timeout time.Duration) error {
+	return NewListener().WaitTimeout(timeout)
+}
+
+func WaitC(fn func()) error {
+	return NewListener().WaitWith(fn)
+}
+
+func WaitTC(timeout time.Duration, fn func()) error {
+	return NewListener().WaitWithTimeout(timeout, fn)
+}

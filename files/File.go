@@ -35,7 +35,7 @@ func (self *File) Mkdir() error {
 	if self.Exist() {
 		return errors.New("the fodler or file is exits")
 	}
-	return os.Mkdir(self.path, os.ModePerm)
+	return os.Mkdir(self.path, 0700)
 }
 
 func (self *File) Parent() *File {
@@ -95,7 +95,7 @@ func (self *File) GetWriter(append bool) (*os.File, error) {
 	if append && self.Exist() {
 		flag = flag | os.O_APPEND
 	}
-	return os.OpenFile(self.path, flag, 0666)
+	return os.OpenFile(self.path, flag, 0600)
 }
 
 func (self *File) Size() int64 {
