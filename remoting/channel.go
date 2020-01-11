@@ -200,6 +200,9 @@ func (self *tcpChannel) writeLoop() {
 		case <-self.closeChan:
 			return
 		case asyncMsg := <-self.sendChan:
+			if asyncMsg == nil {
+				return // sendChan is close, asyncMsg is nil
+			}
 			if !self.GetStatus().IsStart() {
 				return
 			}
