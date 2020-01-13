@@ -67,10 +67,10 @@ type tcpChannel struct {
 	idleTimer   *time.Timer
 	idleTimeout *atomic.AtomicInt32
 
-	worker *executors.GrPool
+	worker executors.ExecutorService
 }
 
-func newChannel(config *Config, worker *executors.GrPool, connect net.Conn) *tcpChannel {
+func newChannel(config *Config, worker executors.ExecutorService, connect net.Conn) *tcpChannel {
 
 	if tcpCon, match := connect.(*net.TCPConn); match {
 		_ = tcpCon.SetKeepAlive(true)
@@ -92,29 +92,6 @@ func newChannel(config *Config, worker *executors.GrPool, connect net.Conn) *tcp
 	}
 }
 
-//安全执行外部方法
-func (self *tcpChannel) safeNotify(fn func(channel Channel)) {
-	if fn == nil {
-		return
-	}
-	_ = commons.AsyncTimeout(time.Second, func() interface{} {
-		fn(self)
-		return nil
-	})
-}
-
-//安全执行外部方法
-func (self *tcpChannel) safeNotifyError(fn func(Channel, error), err error) {
-	if fn == nil {
-		return
-	}
-	_ = commons.AsyncTimeout(time.Second, func() interface{} {
-		return commons.SafeExec(func() {
-			fn(self, err)
-		})
-	})
-}
-
 func (self *tcpChannel) syncDo(fn func()) {
 	defer self.group.Done()
 	fn()
@@ -126,8 +103,10 @@ func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 	defer func() {
 		logger.Debug("channel over: ", self)
 		self.closeChannel()
-		self.safeNotify(self.handler.OnClose)
-		self.safeNotify(closed)
+		self.handler.OnClose(self)
+		if closed != nil {
+			closed(self)
+		}
 	}()
 
 	logger.Debug("channel start: ", self)
@@ -138,8 +117,10 @@ func (self *tcpChannel) do(connected, closed func(channel Channel)) {
 	go self.syncDo(self.readLoop)
 	go self.syncDo(self.writeLoop)
 
-	self.safeNotify(self.handler.OnConnect)
-	self.safeNotify(connected)
+	self.handler.OnConnect(self)
+	if connected != nil {
+		connected(self)
+	}
 
 	self.status = Running
 
@@ -162,24 +143,22 @@ func (self *tcpChannel) readLoop() {
 				if isCloseTCPConnect(err) { //连接已经关闭
 					return
 				}
-				if !strings.Contains(err.Error(), "i/o timeout") {
-					if self.GetStatus().IsStart() {
-						logger.Error("channel decode error: ", err)
-						self.safeNotifyError(self.handler.OnDecodeError, err)
-					}
+				if self.GetStatus().IsStart() {
+					logger.Error("channel decode error: ", err)
+					self.handler.OnDecodeError(self, err)
 				}
 			} else {
 				self.resetIdle()
 				handlerMessage := func() {
-					commons.Try(func() {
-						self.handler.OnMessage(self, msg)
-					}, func(err error) {
-						defer func() { _ = recover() }()
-						self.handler.OnError(self, msg, err)
-					})
+					defer func() {
+						if err := recover(); err != nil {
+							self.handler.OnError(self, msg, commons.Catch(err))
+						}
+					}()
+					self.handler.OnMessage(self, msg)
 				}
 				if self.worker != nil { //异步执行
-					self.worker.Add(handlerMessage)
+					_ = self.worker.Submit(handlerMessage)
 				} else {
 					handlerMessage()
 				}
@@ -204,6 +183,9 @@ func (self *tcpChannel) writeLoop() {
 				return // sendChan is close, asyncMsg is nil
 			}
 			if !self.GetStatus().IsStart() {
+				if asyncMsg.callback != nil {
+					asyncMsg.callback(asyncMsg.msg, ErrConnectClosed)
+				}
 				return
 			}
 			if time.Now().Before(asyncMsg.timeout) {
@@ -278,11 +260,12 @@ func (self *tcpChannel) Write(msg interface{}, timeout time.Duration) (err error
 	result := make(chan error, 1)
 	defer close(result)
 
-	self.AsyncWrite(msg, timeout, func(msg interface{}, err error) {
-		result <- err
+	self.AsyncWrite(msg, timeout, func(msg interface{}, writerErr error) {
+		result <- writerErr
 	})
 
-	return <-result
+	err = <-result
+	return
 }
 
 func (self *tcpChannel) AsyncWrite(msg interface{}, timeout time.Duration, sendCallback SendMessageResult) {
@@ -316,7 +299,7 @@ func (self *tcpChannel) GetRemoteIp() string {
 	return address
 }
 
-func (self *tcpChannel) unsendNotify() {
+func (self *tcpChannel) notSendCallback() {
 	close(self.sendChan)
 	for msg := range self.sendChan {
 		msg.callback(msg.msg, ErrConnectClosed)
@@ -334,7 +317,7 @@ func (self *tcpChannel) closeChannel() {
 		_ = self.connect.Close()
 		self.status = Stoped
 		close(self.closeChan)
-		self.unsendNotify()
+		self.notSendCallback()
 	})
 }
 

@@ -37,7 +37,7 @@ type tcpServer struct {
 	closeOne  *sync.Once
 	waitGroup *sync.WaitGroup
 
-	worker *executors.GrPool
+	worker executors.ExecutorService
 }
 
 func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderMaker CoderMaker) Server {
@@ -48,7 +48,7 @@ func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderM
 		coderMaker:   coderMaker,
 
 		clients: NewIpClientManager(),
-		worker:  executors.NewPoolDefault(config.AsyncHandlerGroup),
+		worker:  executors.Fixed(config.AsyncHandlerGroup),
 
 		exitChan: make(chan struct{}),
 		closeOne: new(sync.Once), waitGroup: new(sync.WaitGroup),

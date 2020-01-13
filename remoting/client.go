@@ -22,7 +22,7 @@ type tcpClient struct {
 	handler Handler  //消息处理器
 	config  *Config  //配置管理器
 	channel *tcpChannel
-	worker  *executors.GrPool
+	worker  executors.ExecutorService
 }
 
 func (self *tcpClient) Start() (err error) {
@@ -31,8 +31,9 @@ func (self *tcpClient) Start() (err error) {
 	}
 
 	if self.config.AsyncHandlerGroup != 0 {
-		self.worker = executors.NewPoolDefault(self.config.AsyncHandlerGroup)
+		self.worker = executors.Fixed(self.config.AsyncHandlerGroup)
 	}
+
 	self.channel = newChannel(self.config, self.worker, self.connect)
 
 	self.channel.handler = self.handler

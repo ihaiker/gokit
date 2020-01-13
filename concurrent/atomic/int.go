@@ -56,5 +56,5 @@ func (self *AtomicInt) Set(i int) {
 }
 
 func (self *AtomicInt) CompareAndSet(expect int, update int) (bool) {
-	return atomic.CompareAndSwapInt32(&self.value, int32(expect), int32(expect))
+	return atomic.CompareAndSwapInt32(&self.value, int32(expect), int32(update))
 }
