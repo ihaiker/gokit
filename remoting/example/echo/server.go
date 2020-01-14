@@ -23,7 +23,7 @@ func main() {
 	logs.SetDebugMode(true)
 
 	config := remoting.DefaultOptions()
-	server := remoting.NewServer(":6379", config, handlerMaker, protocolMaker)
+	server := remoting.NewServer("unix://tmp/test.sock", config, handlerMaker, protocolMaker)
 
 	err := server.Start()
 	if err != nil {
@@ -31,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	runtimeKit.WaitTC(time.Second, func() {
+	runtimeKit.WaitTC(time.Second*3, func() {
 		_ = server.Stop()
 		server.Wait()
 	})

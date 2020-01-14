@@ -3,9 +3,7 @@ package remoting
 import (
 	"github.com/ihaiker/gokit/concurrent/executors"
 	"net"
-	"strings"
 	"sync"
-	"time"
 )
 
 type Server interface {
@@ -34,8 +32,6 @@ type tcpServer struct {
 
 	clients ChannelManager
 
-	exitChan chan struct{}
-
 	closeOne  *sync.Once
 	waitGroup *sync.WaitGroup
 
@@ -52,49 +48,36 @@ func NewServer(address string, options *Options, handlerMaker HandlerMaker, code
 		clients: NewIpClientManager(),
 		worker:  executors.Fixed(options.WorkerGroup),
 
-		exitChan: make(chan struct{}),
 		closeOne: new(sync.Once), waitGroup: new(sync.WaitGroup),
 	}
 }
 
 func (s *tcpServer) startAccept() {
 	defer func() {
-		_ = s.listener.Close()
 		s.worker.Shutdown()
 		s.waitGroup.Done()
 	}()
 	logger.Info("remoting start：", s.listener.Addr().String())
 
 	for {
-		select {
-		case <-s.exitChan:
+		conn, err := s.listener.Accept()
+		if err != nil {
 			return
-		default:
-			if cl, match := s.listener.(*net.TCPListener); match {
-				cl.SetDeadline(time.Now().Add(time.Second))
-			}
-			conn, err := s.listener.Accept()
-			if err != nil {
-				if strings.Contains(err.Error(), "i/o timeout") {
-					continue
-				}
-				return
-			}
-			channel := newChannel(s.options, s.worker, conn)
-			logger.Debug("client connect：", channel)
-			channel.coder = s.coderMaker(channel)
-			channel.handler = s.handlerMaker(channel)
-
-			s.clients.Add(channel)
-			s.waitGroup.Add(1)
-			go func() {
-				defer func() {
-					s.clients.Remove(channel)
-					s.waitGroup.Done()
-				}()
-				channel.do(func(Channel) {})
-			}()
 		}
+		channel := newChannel(s.options, s.worker, conn)
+		logger.Debug("client connect：", channel)
+		channel.coder = s.coderMaker(channel)
+		channel.handler = s.handlerMaker(channel)
+
+		s.clients.Add(channel)
+		s.waitGroup.Add(1)
+		go func() {
+			defer func() {
+				s.clients.Remove(channel)
+				s.waitGroup.Done()
+			}()
+			channel.do(func(Channel) {})
+		}()
 	}
 }
 
@@ -131,7 +114,7 @@ func (s *tcpServer) SetClientManager(manager ChannelManager) {
 // Stop stops service
 func (s *tcpServer) Stop() error {
 	s.closeOne.Do(func() {
-		close(s.exitChan)
+		_ = s.listener.Close()
 	})
 	return nil
 }
