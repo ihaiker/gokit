@@ -103,6 +103,10 @@ func (s *tcpServer) Start() (err error) {
 	if s.listener, err = Listen(s.address); err != nil {
 		return
 	}
+	//unlink on close
+	if unix, match := s.listener.(*net.UnixListener); match {
+		unix.SetUnlinkOnClose(true)
+	}
 	s.waitGroup.Add(1)
 	go s.startAccept()
 	return nil
