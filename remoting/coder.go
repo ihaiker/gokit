@@ -1,12 +1,18 @@
 package remoting
 
-import (
-	"io"
-)
+import "io"
+
+type InboundCoder interface {
+	Decode(channel Channel, reader io.Reader) (Message, error)
+}
+
+type OutboundCoder interface {
+	Encode(channel Channel, msg Message) ([]byte, error)
+}
 
 type Coder interface {
-	Encode(channel Channel, msg interface{}) ([]byte, error)
-	Decode(channel Channel, reader io.Reader) (interface{}, error)
+	InboundCoder
+	OutboundCoder
 }
 
 type CoderMaker func(channel Channel) Coder

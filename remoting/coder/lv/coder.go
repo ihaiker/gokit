@@ -3,7 +3,6 @@ package lv
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/ihaiker/gokit/logs"
 	"github.com/ihaiker/gokit/net/buffer"
 	"github.com/ihaiker/gokit/remoting"
 	"io"
@@ -12,8 +11,6 @@ import (
 var (
 	ErrLengthMaxLimit = errors.New("LengthMaxLimit")
 )
-
-var logger = logs.GetLogger("lv")
 
 type lv struct {
 	//消息体最大长度
@@ -27,7 +24,7 @@ func NewLVCoder(maxLength uint16) *lv {
 func (self *lv) Encode(channel remoting.Channel, msg interface{}) ([]byte, error) {
 	message, match := msg.([]byte)
 	if ! match {
-		return nil, remoting.ErrInvalidArgument
+		return nil, remoting.ErrInvalidMessage
 	}
 	length := uint16(len(message))
 	if length > self.maxLength {

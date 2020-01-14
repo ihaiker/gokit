@@ -11,7 +11,6 @@ type ChannelManager interface {
 	Add(channel Channel)
 	Get(index interface{}) (channel Channel, has bool)
 	Remove(channel Channel)
-
 	Foreach(fn func(channel Channel))
 }
 
@@ -29,9 +28,9 @@ func (cm ipClientManager) Get(index interface{}) (channel Channel, has bool) {
 	if commons.IsNil(index) {
 		return
 	}
-	//默认转换，如果不是那就是程序调用的时候不对了。这里不做过多判断
-	ip := index.(string)
-	channel, has = cm[ip]
+	if ip, match := index.(string); match {
+		channel, has = cm[ip]
+	}
 	return
 }
 func (cm ipClientManager) Remove(channel Channel) {

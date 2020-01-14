@@ -5,7 +5,7 @@ type Status string
 const (
 	Ready   Status = "ready"
 	Running Status = "running"
-	Stoped  Status = "stoped"
+	Stop    Status = "stop"
 )
 
 func (status Status) IsStart() bool {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/ihaiker/gokit/logs"
 	"github.com/ihaiker/gokit/net/buffer"
 	"github.com/ihaiker/gokit/remoting"
 	"io"
@@ -15,8 +14,6 @@ var (
 	ErrLengthMaxLimit     = errors.New("LengthMaxLimit")
 	ErrNotRegisterMessage = errors.New("NotRegisterMessage")
 )
-
-var logger = logs.GetLogger("tlv")
 
 type tlvCoder struct {
 	//消息体最大长度
@@ -30,7 +27,7 @@ func NewTLVCoder(maxLength uint16) *tlvCoder {
 
 func (self *tlvCoder) Reg(msg Message) error {
 	if msg == nil {
-		return remoting.ErrInvalidArgument
+		return remoting.ErrInvalidMessage
 	}
 	self.reg[msg.TypeID()] = reflect.TypeOf(msg)
 	return nil
@@ -39,7 +36,7 @@ func (self *tlvCoder) Reg(msg Message) error {
 func (self *tlvCoder) Encode(channel remoting.Channel, msg interface{}) ([]byte, error) {
 	message, match := msg.(Message)
 	if ! match {
-		return nil, remoting.ErrInvalidArgument
+		return nil, remoting.ErrInvalidMessage
 	}
 
 	typeId := message.TypeID()

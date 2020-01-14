@@ -9,16 +9,15 @@ import (
 	"github.com/ihaiker/gokit/remoting/example/tlv/msg"
 	"github.com/ihaiker/gokit/remoting/handler"
 	"log"
+	"reflect"
 	"time"
 )
 
 func handlerMaker(ch remoting.Channel) remoting.Handler {
-	return handler.Reg().With(handler.Adapter()).
-		WithOnMessage(func(session remoting.Channel, message interface{}) {
-			logs.Info("接收消息:", message)
-			_ = session.Write(msg.NewEcho(fmt.Sprint("ok ", message)), time.Second)
-		})
-
+	return handler.Reg().With(handler.Adapter()).On(remoting.MessageEvent, func(event *remoting.Event) {
+		num := event.Values[0]
+		fmt.Println("收到消息:", num, ",",reflect.TypeOf(num).String())
+	})
 }
 
 func protocolMaker(ch remoting.Channel) remoting.Coder {
@@ -29,8 +28,8 @@ func protocolMaker(ch remoting.Channel) remoting.Coder {
 
 func main() {
 	logs.SetDebugMode(true)
-	config := remoting.DefaultTCPConfig()
-	config.IdleDuration = 0
+	config := remoting.DefaultOptions()
+	config.IdleTimeSeconds = 0
 
 	server := remoting.NewServer(":6379", config, handlerMaker, protocolMaker)
 

@@ -9,8 +9,8 @@ import (
 type Client interface {
 	Start() error
 	Close() error
-	Write(msg interface{}, timeout time.Duration) error
-	AsyncWrite(msg interface{}, timeout time.Duration, callback SendMessageResult)
+	Write(msg Message, timeout time.Duration) error
+	AsyncWrite(msg Message, timeout time.Duration, callback SendMessageResult)
 	GetChannel() Channel
 	Wait()
 }
@@ -20,9 +20,9 @@ type tcpClient struct {
 	connect net.Conn //连接器
 	coder   Coder    //消息编码
 	handler Handler  //消息处理器
-	config  *Config  //配置管理器
-	channel *tcpChannel
-	worker  executors.ExecutorService
+	options *Options //配置管理器
+	*tcpChannel
+	worker executors.ExecutorService
 }
 
 func (self *tcpClient) Start() (err error) {
@@ -30,48 +30,37 @@ func (self *tcpClient) Start() (err error) {
 		return
 	}
 
-	if self.config.AsyncHandlerGroup != 0 {
-		self.worker = executors.Fixed(self.config.AsyncHandlerGroup)
+	if self.options.WorkerGroup != 0 {
+		self.worker = executors.Fixed(self.options.WorkerGroup)
 	}
 
-	self.channel = newChannel(self.config, self.worker, self.connect)
+	self.tcpChannel = newChannel(self.options, self.worker, self.connect)
 
-	self.channel.handler = self.handler
-	self.channel.coder = self.coder
+	self.tcpChannel.handler = self.handler
+	self.tcpChannel.coder = self.coder
 
 	c := make(chan interface{})
-	go self.channel.do(func(channel Channel) { c <- channel }, nil)
+	go self.tcpChannel.do(func(channel Channel) { c <- channel })
 	<-c
 	close(c)
 	return nil
 }
 
 func (self *tcpClient) Close() error {
-	self.worker.Shutdown()
-	return self.channel.Close()
-}
-
-func (self *tcpClient) Write(msg interface{}, timeout time.Duration) error {
-	return self.channel.Write(msg, timeout)
-}
-
-func (self *tcpClient) AsyncWrite(msg interface{}, timeout time.Duration, cb SendMessageResult) {
-	self.channel.AsyncWrite(msg, timeout, cb)
+	err := self.tcpChannel.Close()
+	if self.worker != nil {
+		self.worker.Shutdown()
+	}
+	return err
 }
 
 func (self *tcpClient) GetChannel() Channel {
-	return self.channel
+	return self.tcpChannel
 }
 
-func (self *tcpClient) Wait() {
-	self.channel.Wait()
-}
-
-func NewClient(address string, config *Config, handler Handler, coder Coder) Client {
+func NewClient(address string, options *Options, handler Handler, coder Coder) Client {
 	return &tcpClient{
-		address: address,
-		coder:   coder,
-		handler: handler,
-		config:  config,
+		address: address, options: options,
+		coder: coder, handler: handler,
 	}
 }

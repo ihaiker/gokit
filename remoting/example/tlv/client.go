@@ -17,8 +17,8 @@ func main() {
 	reg := tlv.NewTLVCoder(1024)
 	_ = reg.Reg(msg.NewEcho(time.Now()))
 
-	config := remoting.DefaultTCPConfig()
-	config.IdleDuration = 0
+	config := remoting.DefaultOptions()
+	config.IdleTimeSeconds = 0
 
 	clinet := remoting.NewClient("127.0.0.1:6379", config, handler.Adapter(), reg)
 

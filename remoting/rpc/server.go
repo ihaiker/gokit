@@ -3,16 +3,19 @@ package rpc
 import (
 	"github.com/ihaiker/gokit/commons"
 	"github.com/ihaiker/gokit/concurrent/atomic"
+	"github.com/ihaiker/gokit/logs"
 	"github.com/ihaiker/gokit/remoting"
 	"time"
 )
+
+var logger = logs.GetLogger("remoting.rpc")
 
 type RpcServer interface {
 	Start() error
 
 	Wait()
 
-	Close() error
+	Stop() error
 
 	GetChannelManager() remoting.ChannelManager
 	SetChannelManager(remoting.ChannelManager)
@@ -43,13 +46,13 @@ type rpcServer struct {
 }
 
 func NewServer(address string, onMessage OnMessage, onClose OnClose) RpcServer {
-	return NewServerWithConfig(address, remoting.DefaultTCPConfig(), onMessage, onClose)
+	return NewServerWithConfig(address, remoting.DefaultOptions(), onMessage, onClose)
 }
 
-func NewServerWithConfig(address string, config *remoting.Config, onMessage OnMessage, onClose OnClose) RpcServer {
+func NewServerWithConfig(address string, options *remoting.Options, onMessage OnMessage, onClose OnClose) RpcServer {
 	rpcServer := new(rpcServer)
 	rpcServer.id = atomic.NewAtomicUint32(0)
-	rpcServer.server = remoting.NewServer(address, config, makeHandlerMaker(onMessage, rpcServer.onResponse, onClose), coderMaker)
+	rpcServer.server = remoting.NewServer(address, options, makeHandlerMaker(onMessage, rpcServer.onResponse, onClose), coderMaker)
 	rpcServer.respCache = make(map[uint32]*responseCache)
 	return rpcServer
 }
@@ -62,7 +65,7 @@ func (s *rpcServer) Wait() {
 	s.server.Wait()
 }
 
-func (s *rpcServer) Close() error {
+func (s *rpcServer) Stop() error {
 	return s.server.Stop()
 }
 
@@ -78,8 +81,6 @@ func (s *rpcServer) onResponse(resp *Response) {
 		}, func(e error) { //防止并发问题正好删除关闭触发这里
 			logger.Warn("onResponse error:", e)
 		})
-	} else {
-		logger.Debug("ignore response: ", resp.id)
 	}
 }
 

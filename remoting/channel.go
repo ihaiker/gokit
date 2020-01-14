@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-//发送消息回调
-type SendMessageResult func(msg interface{}, err error)
-
 type asyncMessage struct {
-	msg      interface{}
+	msg      Message
 	timeout  time.Time
 	callback SendMessageResult
 }
+
+//发送消息回调
+type SendMessageResult func(msg Message, err error)
 
 //连接保持器
 type Channel interface {
@@ -32,61 +32,53 @@ type Channel interface {
 	//获取远程连接地址
 	GetRemoteAddress() string
 
-	//获取远程的IP地址
-	GetRemoteIp() string
-
+	//当前状态
 	GetStatus() Status
 
 	//关闭
 	Close() error
 
-	Wait()
-
 	commons.Attributes
 }
 
 type tcpChannel struct {
-	config *Config
-
+	options *Options
 	connect net.Conn
 
-	closeOne *sync.Once
+	status    Status
+	closeOne  *sync.Once
+	closeChan chan struct{} //关闭信号
 
-	status Status
-
-	group *sync.WaitGroup
-
-	closeChan chan struct{}
-	sendChan  chan *asyncMessage
+	group    *sync.WaitGroup
+	sendChan chan *asyncMessage //发送队列
 
 	coder   Coder
 	handler Handler
 
 	commons.Attributes
 
-	idleTimer   *time.Timer
-	idleTimeout *atomic.AtomicInt32
+	heartbeatDetection *time.Timer         //心跳检测时间
+	numberOfTimeouts   *atomic.AtomicInt32 //心跳检测超时次数
 
 	worker executors.ExecutorService
 }
 
-func newChannel(config *Config, worker executors.ExecutorService, connect net.Conn) *tcpChannel {
-
-	if tcpCon, match := connect.(*net.TCPConn); match {
-		_ = tcpCon.SetKeepAlive(true)
-		_ = tcpCon.SetNoDelay(true)
-		_ = tcpCon.SetReadBuffer(config.ReadBufferSize)
-		_ = tcpCon.SetWriteBuffer(config.WriteBufferSize)
+func newChannel(options *Options, worker executors.ExecutorService, conn net.Conn) *tcpChannel {
+	if c, match := conn.(*net.TCPConn); match {
+		_ = c.SetKeepAlive(true)
+		_ = c.SetNoDelay(true)
+		_ = c.SetReadBuffer(options.SendBuf)
+		_ = c.SetWriteBuffer(options.RecvBuf)
 	}
 
 	return &tcpChannel{
-		config: config, connect: connect, worker: worker,
+		options: options, connect: conn, worker: worker,
 
 		closeOne: new(sync.Once), status: Ready,
 		group: new(sync.WaitGroup),
 
 		closeChan: make(chan struct{}),
-		sendChan:  make(chan *asyncMessage, config.SendChanLimit),
+		sendChan:  make(chan *asyncMessage, options.SendChanLimit),
 
 		Attributes: commons.NewAttributes(),
 	}
@@ -97,42 +89,34 @@ func (self *tcpChannel) syncDo(fn func()) {
 	fn()
 }
 
+func (self *tcpChannel) onEvent(event *Event) {
+	defer func() { _ = recover() }()
+	self.handler.OnEvent(event)
+}
+
 //connected 连接后回调
-//closed 关闭后回调
-func (self *tcpChannel) do(connected, closed func(channel Channel)) {
+func (self *tcpChannel) do(connected func(channel Channel)) {
 	defer func() {
-		logger.Debug("channel over: ", self)
 		self.closeChannel()
-		self.handler.OnClose(self)
-		if closed != nil {
-			closed(self)
-		}
+		self.notSendCallback()
+		self.onEvent(NewEvent(CloseEvent, self))
 	}()
-
-	logger.Debug("channel start: ", self)
-
 	self.group.Add(3)
 
-	go self.syncDo(self.heartbeatLoop)
 	go self.syncDo(self.readLoop)
 	go self.syncDo(self.writeLoop)
+	go self.syncDo(self.heartbeatLoop)
 
-	self.handler.OnConnect(self)
+	self.status = Running
+	self.onEvent(NewEvent(ConnectEvent, self))
 	if connected != nil {
 		connected(self)
 	}
-
-	self.status = Running
-
-	self.Wait()
+	self.group.Wait()
 }
 
 func (self *tcpChannel) readLoop() {
-	defer func() {
-		self.closeChannel()
-		logger.Debug("channel reader close: ", self)
-	}()
-	logger.Debug("channel reader start: ", self)
+	defer self.closeChannel()
 
 	for {
 		select {
@@ -144,18 +128,17 @@ func (self *tcpChannel) readLoop() {
 					return
 				}
 				if self.GetStatus().IsStart() {
-					logger.Error("channel decode error: ", err)
-					self.handler.OnDecodeError(self, err)
+					self.onEvent(NewEvent(DecodeErrEvent, self, err))
 				}
 			} else {
 				self.resetIdle()
 				handlerMessage := func() {
 					defer func() {
 						if err := recover(); err != nil {
-							self.handler.OnError(self, msg, commons.Catch(err))
+							self.onEvent(NewEvent(ErrEvent, self, commons.Catch(err)))
 						}
 					}()
-					self.handler.OnMessage(self, msg)
+					self.onEvent(NewEvent(MessageEvent, self, msg))
 				}
 				if self.worker != nil { //异步执行
 					_ = self.worker.Submit(handlerMessage)
@@ -168,11 +151,7 @@ func (self *tcpChannel) readLoop() {
 }
 
 func (self *tcpChannel) writeLoop() {
-	defer func() {
-		logger.Debug("channel write stop: ", self)
-		self.closeChannel()
-	}()
-	logger.Debug("channel write start: ", self)
+	defer self.closeChannel()
 
 	for {
 		select {
@@ -180,7 +159,7 @@ func (self *tcpChannel) writeLoop() {
 			return
 		case asyncMsg := <-self.sendChan:
 			if asyncMsg == nil {
-				return // sendChan is close, asyncMsg is nil
+				return //sendChan is close, asyncMsg is nil
 			}
 			if !self.GetStatus().IsStart() {
 				if asyncMsg.callback != nil {
@@ -190,14 +169,14 @@ func (self *tcpChannel) writeLoop() {
 			}
 			if time.Now().Before(asyncMsg.timeout) {
 				if bs, err := self.coder.Encode(self, asyncMsg.msg); err != nil {
-					self.handler.OnEncodeError(self, asyncMsg.msg, err)
+					self.onEvent(NewEvent(EncodeErrEvent, self, asyncMsg.msg, err))
 				} else {
 					_, err := self.connect.Write(bs)
 					if asyncMsg.callback != nil {
 						asyncMsg.callback(asyncMsg.msg, err)
 					}
 					if err != nil {
-						self.handler.OnError(self, asyncMsg.msg, err)
+						self.onEvent(NewEvent(ErrEvent, self, asyncMsg.msg, err))
 					}
 				}
 			} else if asyncMsg.callback != nil {
@@ -208,16 +187,14 @@ func (self *tcpChannel) writeLoop() {
 }
 
 func (self *tcpChannel) heartbeatLoop() {
-	if self.config.IdleDuration == 0 {
+	if self.options.IdleTimeSeconds == 0 {
 		return
 	}
-	logger.Debug("channel ttl start:", self)
-	self.idleTimer = time.NewTimer(time.Second * time.Duration(self.config.IdleDuration))
-	self.idleTimeout = atomic.NewAtomicInt32(0)
+	self.heartbeatDetection = time.NewTimer(time.Second * time.Duration(self.options.IdleTimeout))
+	self.numberOfTimeouts = atomic.NewAtomicInt32(0)
 
 	defer func() {
-		logger.Debug("channel ttl stop:", self)
-		self.idleTimer.Stop()
+		self.heartbeatDetection.Stop()
 		self.closeChannel()
 	}()
 
@@ -225,26 +202,21 @@ func (self *tcpChannel) heartbeatLoop() {
 		select {
 		case <-self.closeChan:
 			return
-		case <-self.idleTimer.C:
-			self.idleTimer.Reset(time.Second * time.Duration(self.config.IdleDuration))
-			if self.idleTimeout.GetAndIncrement(1) >= int32(self.config.IdleTimeout) {
-				logger.Debug("channel ttl timeout：", self)
+		case <-self.heartbeatDetection.C:
+			self.heartbeatDetection.Reset(time.Second * time.Duration(self.options.IdleTimeSeconds))
+			if self.numberOfTimeouts.GetAndIncrement(1) >= int32(self.options.IdleTimeout) {
 				return
 			}
-			self.handler.OnIdle(self)
+			self.onEvent(NewEvent(IdleEvent, self))
 		}
 	}
 }
 
 func (self *tcpChannel) resetIdle() {
-	if self.idleTimer != nil {
-		self.idleTimer.Reset(time.Second * time.Duration(self.config.IdleDuration))
-		self.idleTimeout.Set(0)
+	if self.heartbeatDetection != nil {
+		self.heartbeatDetection.Reset(time.Second * time.Duration(self.options.IdleTimeSeconds))
+		self.numberOfTimeouts.Set(0)
 	}
-}
-
-func (self *tcpChannel) Wait() {
-	self.group.Wait()
 }
 
 func isCloseTCPConnect(err error) bool {
@@ -290,15 +262,6 @@ func (self *tcpChannel) GetRemoteAddress() string {
 	return self.connect.RemoteAddr().String()
 }
 
-func (self *tcpChannel) GetRemoteIp() string {
-	address := self.GetRemoteAddress()
-	idx := strings.Index(address, ":")
-	if idx != -1 {
-		address = address[0:idx]
-	}
-	return address
-}
-
 func (self *tcpChannel) notSendCallback() {
 	close(self.sendChan)
 	for msg := range self.sendChan {
@@ -313,11 +276,9 @@ func (self *tcpChannel) GetStatus() Status {
 //关闭服务
 func (self *tcpChannel) closeChannel() {
 	self.closeOne.Do(func() {
-		logger.Debug("close channel：", self)
-		_ = self.connect.Close()
-		self.status = Stoped
+		self.status = Stop
 		close(self.closeChan)
-		self.notSendCallback()
+		_ = self.connect.Close()
 	})
 }
 
@@ -329,4 +290,8 @@ func (self *tcpChannel) Close() error {
 
 func (self *tcpChannel) String() string {
 	return self.GetRemoteAddress()
+}
+
+func (self *tcpChannel) Wait() {
+	self.group.Wait()
 }

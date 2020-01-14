@@ -3,7 +3,9 @@ package remoting
 import (
 	"github.com/ihaiker/gokit/concurrent/executors"
 	"net"
+	"strings"
 	"sync"
+	"time"
 )
 
 type Server interface {
@@ -22,7 +24,7 @@ type Server interface {
 }
 
 type tcpServer struct {
-	config *Config // server configuration
+	options *Options // server configuration
 
 	address  string
 	listener net.Listener
@@ -40,15 +42,15 @@ type tcpServer struct {
 	worker executors.ExecutorService
 }
 
-func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderMaker CoderMaker) Server {
+func NewServer(address string, options *Options, handlerMaker HandlerMaker, coderMaker CoderMaker) Server {
 	return &tcpServer{
-		address: address, config: config,
+		address: address, options: options,
 
 		handlerMaker: handlerMaker,
 		coderMaker:   coderMaker,
 
 		clients: NewIpClientManager(),
-		worker:  executors.Fixed(config.AsyncHandlerGroup),
+		worker:  executors.Fixed(options.WorkerGroup),
 
 		exitChan: make(chan struct{}),
 		closeOne: new(sync.Once), waitGroup: new(sync.WaitGroup),
@@ -56,8 +58,11 @@ func NewServer(address string, config *Config, handlerMaker HandlerMaker, coderM
 }
 
 func (s *tcpServer) startAccept() {
-	defer s.waitGroup.Done()
-
+	defer func() {
+		_ = s.listener.Close()
+		s.worker.Shutdown()
+		s.waitGroup.Done()
+	}()
 	logger.Info("remoting start：", s.listener.Addr().String())
 
 	for {
@@ -65,25 +70,30 @@ func (s *tcpServer) startAccept() {
 		case <-s.exitChan:
 			return
 		default:
+			if cl, match := s.listener.(*net.TCPListener); match {
+				cl.SetDeadline(time.Now().Add(time.Second))
+			}
 			conn, err := s.listener.Accept()
 			if err != nil {
+				if strings.Contains(err.Error(), "i/o timeout") {
+					continue
+				}
 				return
 			}
-
-			channel := newChannel(s.config, s.worker, conn)
+			channel := newChannel(s.options, s.worker, conn)
 			logger.Debug("client connect：", channel)
-
 			channel.coder = s.coderMaker(channel)
 			channel.handler = s.handlerMaker(channel)
 
 			s.clients.Add(channel)
-
 			s.waitGroup.Add(1)
-			go channel.do(func(Channel) {}, func(c Channel) {
-				defer s.waitGroup.Done()
-				logger.Debug("client close：", c)
-				s.clients.Remove(c)
-			})
+			go func() {
+				defer func() {
+					s.clients.Remove(channel)
+					s.waitGroup.Done()
+				}()
+				channel.do(func(Channel) {})
+			}()
 		}
 	}
 }
@@ -100,7 +110,6 @@ func (s *tcpServer) Start() (err error) {
 
 func (s *tcpServer) Wait() {
 	s.waitGroup.Wait()
-	logger.Debug("server stoped")
 }
 
 //根据客户端clientId获取客户连接
@@ -118,9 +127,6 @@ func (s *tcpServer) SetClientManager(manager ChannelManager) {
 // Stop stops service
 func (s *tcpServer) Stop() error {
 	s.closeOne.Do(func() {
-		logger.Info("close server")
-		_ = s.listener.Close()
-		s.worker.Shutdown()
 		close(s.exitChan)
 	})
 	return nil

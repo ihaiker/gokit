@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-type OnMessage func(channel remoting.Channel, request *Request) *Response
-type OnClose func(channel remoting.Channel)
-type OnResponse func(response *Response)
+type OnMessage = func(channel remoting.Channel, request *Request) *Response
+type OnClose = func(channel remoting.Channel)
+type OnResponse = func(response *Response)
 
 func OK(channel remoting.Channel, request *Request) *Response {
 	resp := NewResponse(request.ID())
@@ -46,23 +46,25 @@ func newHandler(onMessage OnMessage, onResponse OnResponse, onClose OnClose) rem
 	ping := new(Ping)
 	pong := new(Pong)
 	reg := handler.Reg()
-	reg.WithOnClose(func(session remoting.Channel) {
+	reg.On(remoting.CloseEvent, func(event *remoting.Event) {
 		if onClose != nil {
-			onClose(session)
+			onClose(event.Channel)
 		}
-	}).WithOnIdle(func(ch remoting.Channel) {
+	})
+	reg.On(remoting.IdleEvent, func(event *remoting.Event) {
+		ch := event.Channel
 		logger.Debug("write ping to:", ch)
 		_ = ch.Write(ping, time.Second)
-	}).WithOnDecodeError(func(ch remoting.Channel, err error) {
-		logger.Debug("decoder on:", ch, ", error:", err)
-		_ = ch.Close()
-	}).WithOnEncodeError(func(ch remoting.Channel, msg interface{}, err error) {
-		logger.Debug("encode on:", ch, ", error:", err)
-		_ = ch.Close()
-	}).WithOnError(func(ch remoting.Channel, msg interface{}, err error) {
-		logger.Debug("error on:", ch, ", error:", err)
-		_ = ch.Close()
-	}).WithOnMessage(func(ch remoting.Channel, msg interface{}) {
+	})
+
+	reg.Ons(remoting.EncodeErrEvent, remoting.DecodeErrEvent, remoting.ErrEvent)(func(event *remoting.Event) {
+		_ = event.Channel.Close()
+	})
+
+	reg.On(remoting.MessageEvent, func(event *remoting.Event) {
+		ch := event.Channel
+		msg := event.Values[0]
+
 		pkg := msg.(tlv.Message)
 		switch pkg.TypeID() {
 		case PING:
@@ -71,7 +73,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse, onClose OnClose) rem
 			//do nothing
 		case REQUEST:
 			req := msg.(*Request)
-			logger.Debug("request: ", req.URL, ", ch:", ch)
+			logger.Debug("request: ", req.URL, ", ch: ", ch)
 			commons.Try(func() {
 				if resp := onMessage(ch, req); resp != nil {
 					if err := ch.Write(resp, time.Second); err != nil {

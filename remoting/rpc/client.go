@@ -28,10 +28,10 @@ type rpcClient struct {
 }
 
 func NewClient(address string, onMessage OnMessage, onClose OnClose) RpcClient {
-	return NewClientWithConfig(address, remoting.DefaultTCPConfig(), onMessage, onClose)
+	return NewClientWithConfig(address, remoting.DefaultOptions(), onMessage, onClose)
 }
 
-func NewClientWithConfig(address string, config *remoting.Config, onMessage OnMessage, onClose OnClose) RpcClient {
+func NewClientWithConfig(address string, config *remoting.Options, onMessage OnMessage, onClose OnClose) RpcClient {
 	client := new(rpcClient)
 	client.id = atomic.NewAtomicUint32(0)
 	client.client = remoting.NewClient(address, config, newHandler(onMessage, client.onResponse, onClose), newCoder())

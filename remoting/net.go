@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+func Dial(address string) (net.Conn, error) {
+	if strings.HasPrefix(address, "tcp://") {
+		return DialTcp(address)
+	} else if strings.HasPrefix(address, "unix://") {
+		return DialUnix(address)
+	}
+	return DialTcp(address)
+}
+
 func DialTcp(address string) (net.Conn, error) {
 	network := "tcp4"
 	ip := address
@@ -19,7 +28,10 @@ func DialTcp(address string) (net.Conn, error) {
 	}
 }
 
-func DialUnit(address string) (net.Conn, error) {
+func DialUnix(address string) (net.Conn, error) {
+	if strings.HasPrefix(address, "unix://") {
+		address = address[6:]
+	}
 	unixAddr, err := net.ResolveUnixAddr("unix", address)
 	if err != nil {
 		return nil, err
@@ -27,15 +39,13 @@ func DialUnit(address string) (net.Conn, error) {
 	return net.DialUnix("unix", nil, unixAddr)
 }
 
-func Dial(address string) (net.Conn, error) {
-	if strings.HasPrefix(address, "tcp://") ||
-		strings.HasPrefix(address, "tcp4://") ||
-		strings.HasPrefix(address, "tcp6://") {
-		return DialTcp(address)
+func Listen(address string) (net.Listener, error) {
+	if strings.HasPrefix(address, "tcp://") {
+		return ListenTcp(address)
 	} else if strings.HasPrefix(address, "unix://") {
-		return DialUnit(address[6:])
+		return ListenUnix(address)
 	}
-	return DialTcp(address)
+	return ListenTcp(address)
 }
 
 func ListenTcp(address string) (*net.TCPListener, error) {
@@ -48,25 +58,17 @@ func ListenTcp(address string) (*net.TCPListener, error) {
 	if tcpAddr, err := net.ResolveTCPAddr(network, ip); err != nil {
 		return nil, err
 	} else {
-		return net.ListenTCP("tcp", tcpAddr);
+		return net.ListenTCP("tcp", tcpAddr)
 	}
 }
 
 func ListenUnix(address string) (net.Listener, error) {
+	if strings.HasPrefix(address, "unix://") {
+		address = address[6:]
+	}
 	add, err := net.ResolveUnixAddr("unix", address)
 	if err != nil {
 		return nil, err
 	}
 	return net.ListenUnix("unix", add)
-}
-
-func Listen(address string) (net.Listener, error) {
-	if strings.HasPrefix(address, "tcp://") ||
-		strings.HasPrefix(address, "tcp4://") ||
-		strings.HasPrefix(address, "tcp6://") {
-		return ListenTcp(address)
-	} else if strings.HasPrefix(address, "unix://") {
-		return ListenUnix(address[6:])
-	}
-	return ListenTcp(address)
 }

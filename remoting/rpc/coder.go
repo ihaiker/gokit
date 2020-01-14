@@ -5,6 +5,13 @@ import (
 	"github.com/ihaiker/gokit/remoting/coder/tlv"
 )
 
+const (
+	PING     = uint16(0)
+	PONG     = uint16(1)
+	REQUEST  = uint16(2)
+	RESPONSE = uint16(3)
+)
+
 func coderMaker(channel remoting.Channel) remoting.Coder {
 	return newCoder()
 }
