@@ -11,9 +11,9 @@ type AsyncFun func() interface{}
 
 //保证发送的时候不会出现: send on closed channel
 func sendChannel(obj interface{}, c chan interface{}) (send error) {
-	defer func() {
-		send = DCatch(recover(), send)
-	}()
+	defer Catch(func(err error) {
+		send = err
+	})
 	c <- obj
 	return nil
 }

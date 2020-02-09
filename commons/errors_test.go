@@ -19,7 +19,9 @@ func TestTry(t *testing.T) {
 
 func TestCatch(t *testing.T) {
     testCatch := func() (err error) {
-        defer func() { err = Catch(recover()) }()
+        defer Catch(func(e error) {
+            err = e
+        })
 
         i := 1
         j := 1
@@ -33,7 +35,9 @@ func TestCatch(t *testing.T) {
 
 func TestDCatch(t *testing.T) {
     testCatch := func() (err error) {
-        defer func() { err = DCatch(recover(), err) }()
+        defer Catch(func(e error) {
+            err = e
+        })
 
         err = errors.New("test")
 

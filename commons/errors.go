@@ -6,12 +6,8 @@ import (
 )
 
 //Try handler(err)
-func Try(fun func(), handler func(error)) {
-	defer func() {
-		if err := Catch(recover()); err != nil {
-			handler(err)
-		}
-	}()
+func Try(fun func(), handler ...func(error)) {
+	defer Catch(handler...)
 	fun()
 }
 
@@ -49,31 +45,25 @@ func SafeExec(fun func()) (err error) {
 	return err
 }
 
-func Catch(r interface{}) error {
-	var e error = nil
-	if r != nil {
-		if er, ok := r.(error); ok {
-			e = er
-		} else if er, ok := r.(string); ok {
-			e = errors.New(er)
-		} else {
-			e = errors.New(fmt.Sprintf("%v", r))
-		}
-	}
-	return e
-}
-
-func DCatch(r interface{}, err error) error {
-	if err != nil {
-		return err
-	}
-	return Catch(r)
-}
-
 //如果不为空panic错误
 func PanicIfPresent(err interface{}) {
 	if err != nil {
 		panic(err)
+	}
+}
+
+func Catch(fns ...func(error)) {
+	if r := recover(); r != nil && len(fns) > 0 {
+		if err, match := r.(error); match {
+			for _, fn := range fns {
+				fn(err)
+			}
+		} else {
+			err := fmt.Errorf("%v", r)
+			for _, fn := range fns {
+				fn(err)
+			}
+		}
 	}
 }
 
