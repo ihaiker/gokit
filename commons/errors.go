@@ -67,6 +67,13 @@ func Catch(fns ...func(error)) {
 	}
 }
 
+func Convert(rev interface{}) error {
+	if rev == nil {
+		return nil
+	}
+	return fmt.Errorf("%v", rev)
+}
+
 //如果不为空，使用msgpanic错误，
 func PanicMessageIfPresent(err interface{}, msg string) {
 	if err != nil {
