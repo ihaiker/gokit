@@ -16,7 +16,7 @@ type Options struct {
 
 	//心跳检测周期,单位秒
 	IdleTimeSeconds int `json:"idleTimeSeconds" yaml:"idleTimeSeconds" toml:"idleTimeSeconds"`
-	//心跳检测超时次数，多少次检测后失效
+	//心跳检测超时次数
 	IdleTimeout int `json:"idleTimeout" yaml:"idleTimeout" toml:"idleTimeout"`
 
 	SendBuf int `json:"sendBuf" yaml:"sendBuf" toml:"sendBuf"`

@@ -14,7 +14,7 @@ func main() {
 
 	config := remoting.DefaultOptions()
 
-	clinet := remoting.NewClient("127.0.0.1:6379", config, handler.Adapter(), line.New("\n"))
+	clinet := remoting.NewClient("unix://tmp/test.sock", config, handler.Adapter(), line.New("\n"))
 
 	if err := clinet.Start(); err != nil {
 		logs.Fatal(err)

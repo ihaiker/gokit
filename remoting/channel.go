@@ -1,6 +1,7 @@
 package remoting
 
 import (
+	"fmt"
 	"github.com/ihaiker/gokit/commons"
 	"github.com/ihaiker/gokit/concurrent/atomic"
 	"github.com/ihaiker/gokit/concurrent/executors"
@@ -58,7 +59,7 @@ type tcpChannel struct {
 	commons.Attributes
 
 	heartbeatDetection *time.Timer         //心跳检测时间
-	numberOfTimeouts   *atomic.AtomicInt32 //心跳检测超时次数
+	lastBeatTime       *atomic.AtomicInt64 //上次心跳时间
 
 	worker executors.ExecutorService
 }
@@ -135,7 +136,7 @@ func (self *tcpChannel) readLoop() {
 				handlerMessage := func() {
 					defer func() {
 						if err := recover(); err != nil {
-							self.onEvent(NewEvent(ErrEvent, self, commons.Catch(err)))
+							self.onEvent(NewEvent(ErrEvent, self, fmt.Errorf("%v", err)))
 						}
 					}()
 					self.onEvent(NewEvent(MessageEvent, self, msg))
@@ -191,7 +192,9 @@ func (self *tcpChannel) heartbeatLoop() {
 		return
 	}
 	self.heartbeatDetection = time.NewTimer(time.Second * time.Duration(self.options.IdleTimeout))
-	self.numberOfTimeouts = atomic.NewAtomicInt32(0)
+	self.lastBeatTime = atomic.NewAtomicInt64(time.Now().Unix())
+
+	timeout := int64(self.options.IdleTimeout * self.options.IdleTimeSeconds)
 
 	defer func() {
 		self.heartbeatDetection.Stop()
@@ -204,18 +207,21 @@ func (self *tcpChannel) heartbeatLoop() {
 			return
 		case <-self.heartbeatDetection.C:
 			self.heartbeatDetection.Reset(time.Second * time.Duration(self.options.IdleTimeSeconds))
-			if self.numberOfTimeouts.GetAndIncrement(1) >= int32(self.options.IdleTimeout) {
+			p := time.Now().Unix() - self.lastBeatTime.Get()
+			if p >= timeout { //timeout
 				return
+			} else if p < int64(self.options.IdleTimeSeconds) {
+				//没到时间呢
+			} else {
+				self.onEvent(NewEvent(IdleEvent, self))
 			}
-			self.onEvent(NewEvent(IdleEvent, self))
 		}
 	}
 }
 
 func (self *tcpChannel) resetIdle() {
 	if self.heartbeatDetection != nil {
-		self.heartbeatDetection.Reset(time.Second * time.Duration(self.options.IdleTimeSeconds))
-		self.numberOfTimeouts.Set(0)
+		self.lastBeatTime.Set(time.Now().Unix())
 	}
 }
 
