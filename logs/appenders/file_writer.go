@@ -96,7 +96,7 @@ func NewDailyRollingFileOut(fileName string) (io.Writer, error) {
 		fileName := strings.Replace(fileName, "{"+layout+"}", key.(string), 1)
 		return newFileout(fileName)
 	}).EvictedFunc(func(key, value interface{}) {
-		fd := value.(*os.File)
+		fd := value.(io.WriteCloser)
 		fmt.Println("close: ", key)
 		_ = fd.Close()
 	})
