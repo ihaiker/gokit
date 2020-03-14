@@ -55,6 +55,12 @@ func CloseAll() {
 	}
 }
 
+func SetAllLevel(level Level) {
+	for _, logger := range loggers {
+		logger.SetLevel(level)
+	}
+}
+
 func SetNamedLevel(name string, level Level) {
 	logger := GetLogger(name)
 	logger.SetLevel(level)

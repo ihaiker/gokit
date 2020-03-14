@@ -2,7 +2,7 @@ package config
 
 import (
 	"errors"
-	"github.com/ihaiker/gokit/files"
+	fileKit "github.com/ihaiker/gokit/files"
 	"github.com/jinzhu/configor"
 )
 
@@ -28,9 +28,7 @@ func NewConfigRegister(name, module string) *register {
 
 	paths := reg.searchConfigLocations()
 	for _, path := range paths {
-		if files.IsExistFile(path) {
-			reg.AddPath(path)
-		}
+		reg.AddConfig(path)
 	}
 	return reg
 }
@@ -48,24 +46,24 @@ func (this *register) With(config *configor.Config) *register {
 	return this
 }
 
-func (this *register) AddPath(path ...string) *register {
-	this.path = append(path, this.path...)
+func (this *register) AddConfig(path ...string) *register {
+	//覆盖模式从后向前
+	for _, p := range path {
+		this.path = append([]string{p}, this.path...)
+	}
 	return this
 }
 
-func (this *register) AddAtPath(at int, path string) *register {
-	if len(this.path) > at {
-		start := this.path[0:at]
-		end := this.path[at:0]
-		this.path = append(start, path)
-		this.path = append(this.path, end...)
+func (this *register) MustExitConfig(files ...string) error {
+	for _, f := range files {
+		if !fileKit.IsExistFile(f) {
+			return ErrConfigNotFound
+		}
 	}
-	return this
+	this.AddConfig(files...)
+	return nil
 }
 
 func (this *register) Marshal(cfg interface{}) error {
-	if len(this.path) == 0 {
-		return ErrConfigNotFound
-	}
 	return configor.New(this.config).Load(cfg, this.path...)
 }

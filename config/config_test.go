@@ -15,6 +15,7 @@ type UserInfo struct {
 }
 
 func TestRegister(t *testing.T) {
+
 	_ = os.Setenv("CONFIGOR_DEBUG_MODE", "true")
 	_ = os.Setenv("CONFIGOR_VERBOSE_MODE", "true")
 	_ = os.Setenv("CONFIGOR_SILENT_MODE", "true")
@@ -25,6 +26,10 @@ func TestRegister(t *testing.T) {
 	cfg = cfg.With(&configor.Config{
 		ENVPrefix:            "TEST",
 	})
+
+	if err := cfg.MustExitConfig("./test.noufound.json"); err != nil {
+		t.Log(err)
+	}
 
 	err := cfg.Marshal(u)
 	if err != nil {

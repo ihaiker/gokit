@@ -67,6 +67,12 @@ func Catch(fns ...func(error)) {
 	}
 }
 
+func CatchError(err error) {
+	Catch(func(e error) {
+		err = e
+	})
+}
+
 func Convert(rev interface{}) error {
 	if rev == nil {
 		return nil
