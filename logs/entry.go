@@ -3,6 +3,7 @@ package logs
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -31,11 +32,24 @@ func getRuntimeInfo(dep int) *entry {
 	if caller != nil {
 		function = caller.Name()
 	}
+
+	idx := strings.Index(function, ".(")
+	if idx == -1 {
+		fnPageName := filepath.Base(function)
+		idx = strings.Index(fnPageName, ".")
+		file = filepath.Dir(function) + "/" + fnPageName[0:idx] + "/" + filepath.Base(file)
+		function = path.Base(function)
+	} else {
+		fn := function[idx+1:]
+		file = function[0:idx] + "/" + filepath.Base(file)
+		function = fn
+	}
+
 	return &entry{
 		time: time.Now(),
 		file: file,
 		line: line,
-		fun:  path.Base(function),
+		fun:  function,
 	}
 }
 
