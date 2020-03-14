@@ -1,5 +1,5 @@
 {
-	"name": "hai",
+	"name": "hai json ${PATH}",
 	"address": {
 		"code": "100100",
 		"info": "中国，北京",
