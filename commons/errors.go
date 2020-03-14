@@ -45,6 +45,10 @@ func SafeExec(fun func()) (err error) {
 	return err
 }
 
+func Exec(fn func()) {
+	_ = SafeExec(fn)
+}
+
 //如果不为空panic错误
 func PanicIfPresent(err interface{}) {
 	if err != nil {

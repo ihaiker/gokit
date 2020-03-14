@@ -2,8 +2,6 @@ package logs
 
 import (
 	"errors"
-	fileKit "github.com/ihaiker/gokit/files"
-	"github.com/ihaiker/gokit/logs/appenders"
 	"io"
 	"net"
 	"os"
@@ -16,11 +14,9 @@ func appender(appender string) (io.Writer, error) {
 		return os.Stdout, nil
 
 	} else if strings.HasPrefix(appender, "file://") {
+
 		file := appender[6:]
-		if _, match := appenders.MatchDailyRollingFile(file); match {
-			return appenders.NewDailyRollingFileOut(file)
-		}
-		return fileKit.New(file).GetWriter(true)
+		return NewDailyRolling(file)
 
 	} else if strings.HasPrefix(appender, "sock://") {
 

@@ -1,7 +1,6 @@
 package logs
 
 import (
-	"io"
 	"os"
 	"sync"
 )
@@ -33,26 +32,9 @@ func GetLogger(name string) Logger {
 
 	if _, has := loggers[name]; !has {
 		nl := createLogger(name)
-		nl.SetLevel(Root().Level())
-		nl.SetPattern(Root().Pattern().String())
-		nl.SetOut(Root().Out())
 		loggers[name] = nl
 	}
 	return loggers[name]
-}
-
-func Log(name string) (logger Logger, has bool) {
-	logger, has = loggers[name]
-	return
-}
-
-func CloseAll() {
-	for _, logger := range loggers {
-		out := logger.Out()
-		if closer, match := out.(io.Closer); match {
-			_ = closer.Close()
-		}
-	}
 }
 
 func SetAllLevel(level Level) {
