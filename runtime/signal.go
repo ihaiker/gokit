@@ -11,22 +11,30 @@ import (
 
 var logger = logs.GetLogger("signal")
 
-type SignalListener struct {
-	C          chan os.Signal
-	OnCloseFns []func()
-}
+type (
+	Service interface {
+		Start() error
+		Stop() error
+	}
+
+	SignalListener struct {
+		C        chan os.Signal
+		services []Service
+		idx      int
+	}
+)
 
 func NewListener() *SignalListener {
 	lis := &SignalListener{
-		C:          make(chan os.Signal),
-		OnCloseFns: []func(){},
+		C:        make(chan os.Signal),
+		services: make([]Service, 0),
 	}
 	signal.Notify(lis.C, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, )
 	return lis
 }
 
 //正常退出
-func (sl *SignalListener) Stop() {
+func (sl *SignalListener) Shutdown() {
 	logger.Debug("send stop signal: ", syscall.SIGTERM.String())
 	sl.C <- syscall.SIGTERM
 }
@@ -37,74 +45,81 @@ func (sl *SignalListener) Kill() {
 	os.Exit(0)
 }
 
-//关闭程序，首先使用Stop正常退出，然后使用Kill直接退出程序
-func (sl *SignalListener) Shutdown(timeout time.Duration) {
-	sl.Stop()
-	<-time.After(timeout)
-	sl.Kill()
+func (sl *SignalListener) Add(services ...Service) *SignalListener {
+	sl.services = append(sl.services, services...)
+	return sl
 }
 
 //从最后添加一个
-func (sl *SignalListener) OnClose(fn func()) {
-	sl.OnCloseFns = append(sl.OnCloseFns, fn)
+func (sl *SignalListener) AddStart(fn func() error) *SignalListener {
+	sl.services = append(sl.services, &funcService{StartFn: fn})
+	return sl
 }
 
-func (sl *SignalListener) PrependOnClose(fn func()) {
-	sl.OnCloseFns = append([]func(){fn}, sl.OnCloseFns...)
+//从最后添加一个
+func (sl *SignalListener) AddStop(fn func() error) *SignalListener {
+	sl.services = append(sl.services, &funcService{StopFn: fn})
+	return sl
 }
 
-//等待程序退出,如果close函数阻塞也将无法退出
-func (sl *SignalListener) WaitWith(close func()) error {
-	return sl.WaitWithTimeout(time.Hour, close)
+func (sl *SignalListener) stop(timeout time.Duration) error {
+	err := commons.AsyncTimeout(timeout, func() interface{} {
+		for i := sl.idx; i >= 0; i-- {
+			if err := sl.services[i].Stop(); err != nil {
+				logger.Warn("stop service error: ", err)
+			}
+		}
+		return nil
+	})
+	if err == commons.ErrAsyncTimeout {
+		logger.Info("close timeout: ", timeout.String())
+		sl.Kill()
+		return commons.ErrAsyncTimeout
+	}
+	return nil
 }
 
-//无调用的方式也可以退出
-func (sl *SignalListener) WaitWithTimeout(timeout time.Duration, closeFn func()) error {
+func (sl *SignalListener) start() error {
+	for i, service := range sl.services {
+		if err := service.Start(); err != nil {
+			return err
+		}
+		sl.idx = i
+	}
+	return nil
+}
+
+func (sl *SignalListener) await(timeout time.Duration) error {
 	for s := range sl.C {
-		logs.Info("signal: ", s.String())
+		logger.Info("signal: ", s.String())
 		switch s {
 		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-			err := commons.AsyncTimeout(timeout, func() interface{} {
-				logger.Debug("close by signal")
-				for _, onCloseFn := range sl.OnCloseFns {
-					onCloseFn()
-				}
-				if closeFn != nil {
-					closeFn()
-				}
-				return nil
-			})
-			if err == commons.ErrAsyncTimeout {
-				logger.Info("close timeout: ", timeout.String())
-				sl.Kill()
-				return commons.ErrAsyncTimeout
-			}
-			return nil
+			return sl.stop(timeout)
 		}
 	}
 	return nil
 }
 
 func (sl *SignalListener) Wait() error {
-	return sl.WaitTimeout(time.Hour)
+	return sl.WaitTimeout(time.Second * 7)
 }
 
 func (sl *SignalListener) WaitTimeout(timeout time.Duration) error {
-	return sl.WaitWithTimeout(timeout, func() {})
+	if err := sl.start(); err != nil {
+		_ = sl.stop(timeout)
+		return err
+	}
+	return sl.await(timeout)
 }
 
 func Wait() error {
 	return NewListener().WaitTimeout(time.Second * 7)
 }
 
-func WaitT(timeout time.Duration) error {
+func WaitTimeout(timeout time.Duration) error {
 	return NewListener().WaitTimeout(timeout)
 }
 
-func WaitC(fn func()) error {
-	return NewListener().WaitWith(fn)
-}
-
-func WaitTC(timeout time.Duration, fn func()) error {
-	return NewListener().WaitWithTimeout(timeout, fn)
+func WaitTC(timeout time.Duration, fn func() error) error {
+	return NewListener().AddStop(fn).WaitTimeout(timeout)
 }
