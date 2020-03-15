@@ -13,10 +13,10 @@ type NumService struct {
 }
 
 func (n NumService) Start() error {
-	fmt.Println("start num == ", n.Num)
-	if n.Num == 3 {
+	if n.Num == 2 {
 		return os.ErrNotExist
 	}
+	fmt.Println("start num == ", n.Num)
 	return nil
 }
 

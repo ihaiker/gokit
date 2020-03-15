@@ -27,7 +27,7 @@ type (
 func NewListener() *SignalListener {
 	lis := &SignalListener{
 		C:        make(chan os.Signal),
-		services: make([]Service, 0),
+		services: make([]Service, 0), idx: -1,
 	}
 	signal.Notify(lis.C, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, )
 	return lis
