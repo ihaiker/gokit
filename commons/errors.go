@@ -72,9 +72,13 @@ func Catch(fns ...func(error)) {
 }
 
 func CatchError(err error) {
-	Catch(func(e error) {
-		err = e
-	})
+	if r := recover(); r != nil {
+		if e, match := r.(error); match {
+			err = e
+		} else {
+			err = fmt.Errorf("%v", r)
+		}
+	}
 }
 
 func Convert(rev interface{}) error {
