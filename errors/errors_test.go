@@ -76,3 +76,27 @@ func TestStack(t *testing.T) {
 	err := SafeExec(throw)
 	Assert(WrapStack(err))
 }
+
+func TestIs(t *testing.T) {
+	err := Wrap(os.ErrNotExist, "文件不存在")
+	t.Log(err)
+	is1 := Is(err, os.ErrNotExist)
+	t.Log(is1)
+
+	wst := WrapStack(err)
+	t.Log(wst)
+	is2 := Is(wst, os.ErrNotExist)
+	t.Log(is2)
+
+	{
+		w3 := Wrap(wst, "在+一层呢")
+		t.Log(w3)
+		t.Log(Is(w3, os.ErrNotExist))
+	}
+
+	{
+		w3 := Wrap(err, "在+一层呢")
+		t.Log(w3)
+		t.Log(Is(w3, os.ErrNotExist))
+	}
+}

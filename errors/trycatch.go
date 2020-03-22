@@ -48,7 +48,3 @@ func SafeExec(fun func()) (err error) {
 	})
 	return err
 }
-
-func Exec(fn func()) {
-	_ = SafeExec(fn)
-}

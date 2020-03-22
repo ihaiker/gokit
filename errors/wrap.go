@@ -30,3 +30,18 @@ func WrapLast(err error, message string) error {
 		}
 	}
 }
+
+func Is(err, check error) bool {
+	return Root(err) == check
+}
+
+func Root(err error) error {
+	switch tt := err.(type) {
+	case *WrapError:
+		return Root(tt.Err)
+	case *StackError:
+		return Root(tt.Err)
+	default:
+		return tt
+	}
+}
