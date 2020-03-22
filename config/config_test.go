@@ -21,7 +21,7 @@ func TestRegister(t *testing.T) {
 	_ = os.Setenv("CONFIGOR_SILENT_MODE", "true")
 
 	u := new(UserInfo)
-	cfg := NewConfigRegister("test", "test")
+	cfg := NewConfigRegister("nginx", "user")
 
 	cfg = cfg.With(&configor.Config{
 		ENVPrefix:            "TEST",

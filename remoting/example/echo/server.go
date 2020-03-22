@@ -31,8 +31,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	runtimeKit.WaitTC(time.Second*3, func() {
-		_ = server.Stop()
-		server.Wait()
+	runtimeKit.WaitTC(time.Second*3, func() (err error) {
+		if err = server.Stop(); err == nil {
+			server.Wait()
+		}
+		return
 	})
 }

@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/ihaiker/gokit/commons"
 	"github.com/ihaiker/gokit/concurrent/atomic"
+	"github.com/ihaiker/gokit/errors"
 	"github.com/ihaiker/gokit/logs"
 	"github.com/ihaiker/gokit/remoting"
 	"time"
@@ -72,7 +72,7 @@ func (s *rpcServer) Stop() error {
 func (s *rpcServer) onResponse(resp *Response) {
 	if cache, has := s.respCache[resp.id]; has {
 		delete(s.respCache, resp.id)
-		commons.Try(func() {
+		errors.Try(func() {
 			if cache.C != nil {
 				cache.C <- resp
 			} else {

@@ -2,7 +2,7 @@ package logs
 
 import (
 	"fmt"
-	"github.com/ihaiker/gokit/commons"
+	"github.com/ihaiker/gokit/errors"
 	"github.com/ihaiker/gokit/files"
 	"io"
 	"os"
@@ -53,13 +53,15 @@ func (self *dailyRollingFile) start() {
 }
 
 func (self *dailyRollingFile) Write(p []byte) (n int, err error) {
-	defer commons.CatchError(err)
+	defer errors.Catch(func(e error) {
+		err = e
+	})
 	self.c <- p
 	return len(p), nil
 }
 
 func (self *dailyRollingFile) Close() error {
-	commons.Exec(func() { close(self.c) })
+	errors.Exec(func() { close(self.c) })
 	self.gw.Wait()
 	self.closePre()
 	return nil

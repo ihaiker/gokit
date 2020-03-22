@@ -1,8 +1,8 @@
 package future
 
 import (
-	"github.com/ihaiker/gokit/commons"
 	"github.com/ihaiker/gokit/concurrent/atomic"
+	"github.com/ihaiker/gokit/errors"
 )
 
 type AsyncRunFuture struct {
@@ -13,7 +13,7 @@ func (self *AsyncRunFuture) Run(fn func(Future) (interface{}, error)) {
 	self.status.CompareAndSet(_INIT, _RUNNING)
 	go func() {
 		defer close(self.resultChan)
-		defer commons.Catch(func(err error) {
+		defer errors.Catch(func(err error) {
 			if !self.IsCancelled() {
 				if self.status.CompareAndSet(_RUNNING, _EXCEPTION) {
 					self.err = err

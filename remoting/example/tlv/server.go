@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ihaiker/gokit/commons"
+	"github.com/ihaiker/gokit/errors"
 	"github.com/ihaiker/gokit/logs"
 	"github.com/ihaiker/gokit/remoting"
 	"github.com/ihaiker/gokit/remoting/coder/tlv"
@@ -16,13 +16,13 @@ import (
 func handlerMaker(ch remoting.Channel) remoting.Handler {
 	return handler.Reg().With(handler.Adapter()).On(remoting.MessageEvent, func(event *remoting.Event) {
 		num := event.Values[0]
-		fmt.Println("收到消息:", num, ",",reflect.TypeOf(num).String())
+		fmt.Println("收到消息:", num, ",", reflect.TypeOf(num).String())
 	})
 }
 
 func protocolMaker(ch remoting.Channel) remoting.Coder {
 	coder := tlv.NewTLVCoder(1024)
-	commons.PanicIfPresent(coder.Reg(msg.NewEcho(time.Now())))
+	errors.Assert(coder.Reg(msg.NewEcho(time.Now())))
 	return coder
 }
 

@@ -1,8 +1,8 @@
 package executors
 
 import (
-	"github.com/ihaiker/gokit/commons"
 	"github.com/ihaiker/gokit/concurrent/atomic"
+	"github.com/ihaiker/gokit/errors"
 	"io"
 )
 
@@ -21,7 +21,7 @@ func (self *singleService) startService() {
 				return
 			case task := <-self.tasksQueue:
 				if task != nil {
-					if err := commons.SafeExec(task); err != nil {
+					if err := errors.SafeExec(task); err != nil {
 						logger.Info("executor task error: ", err)
 					}
 				}
@@ -32,7 +32,7 @@ func (self *singleService) startService() {
 
 func (self *singleService) consumeUnfinishedTasks() {
 	for task := range self.tasksQueue {
-		if err := commons.SafeExec(task); err != nil {
+		if err := errors.SafeExec(task); err != nil {
 			logger.Info("executor task error: ", err)
 		}
 	}

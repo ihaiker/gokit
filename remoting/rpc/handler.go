@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/ihaiker/gokit/commons"
+	"github.com/ihaiker/gokit/errors"
 	"github.com/ihaiker/gokit/remoting"
 	"github.com/ihaiker/gokit/remoting/coder/tlv"
 	"github.com/ihaiker/gokit/remoting/handler"
@@ -74,7 +74,7 @@ func newHandler(onMessage OnMessage, onResponse OnResponse, onClose OnClose) rem
 		case REQUEST:
 			req := msg.(*Request)
 			logger.Debug("request: ", req.URL, ", ch: ", ch)
-			commons.Try(func() {
+			errors.Try(func() {
 				if resp := onMessage(ch, req); resp != nil {
 					if err := ch.Write(resp, time.Second); err != nil {
 						logger.Errorf("write response %s error: %s", req.URL, err)
