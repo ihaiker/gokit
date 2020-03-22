@@ -61,7 +61,7 @@ func (self *dailyRollingFile) Write(p []byte) (n int, err error) {
 }
 
 func (self *dailyRollingFile) Close() error {
-	errors.Exec(func() { close(self.c) })
+	errors.Try(func() { close(self.c) })
 	self.gw.Wait()
 	self.closePre()
 	return nil
