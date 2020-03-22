@@ -68,3 +68,11 @@ func TestAll(t *testing.T) {
 
 	Assert(os.ErrNotExist, "未发现内容")
 }
+
+func TestStack(t *testing.T) {
+	defer Catch(func(re error) {
+		t.Log(re)
+	})
+	err := SafeExec(throw)
+	Assert(WrapStack(err))
+}

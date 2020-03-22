@@ -36,7 +36,8 @@ func Stack() string {
 		if strings.Contains(frame.File, "/gokit/errors/") ||
 			strings.HasSuffix(frame.File, "/src/runtime/panic.go") ||
 			strings.HasSuffix(frame.File, "/testing/testing.go") ||
-			frame.Function == "runtime.goexit" || frame.Function == "" {
+			frame.Function == "runtime.goexit" ||
+			frame.Function == "" {
 		} else {
 			trace = trace + fmt.Sprintf("  %s:%d , Function: %s,\n", frame.File, frame.Line, frame.Function)
 		}
