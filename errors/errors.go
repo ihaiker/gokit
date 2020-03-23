@@ -25,6 +25,10 @@ func Convert(rev interface{}) error {
 	}
 }
 
+var StackFilter = func(frame runtime.Frame) bool {
+	return true
+}
+
 func Stack() string {
 	stackBuf := make([]uintptr, 50)
 	length := runtime.Callers(3, stackBuf[:])
@@ -33,12 +37,12 @@ func Stack() string {
 	frames := runtime.CallersFrames(stack)
 	for {
 		frame, more := frames.Next()
-		if strings.Contains(frame.File, "/gokit/errors/") ||
+		if frame.Function == "github.com/ihaiker/gokit/errors.Assert" ||
 			strings.HasSuffix(frame.File, "/src/runtime/panic.go") ||
 			strings.HasSuffix(frame.File, "/testing/testing.go") ||
-			frame.Function == "runtime.goexit" ||
-			frame.Function == "" {
-		} else {
+			strings.HasSuffix(frame.File, "/reflect/value.go") ||
+			frame.Function == "runtime.goexit" || frame.Function == "" {
+		} else if StackFilter(frame) {
 			trace = trace + fmt.Sprintf("  %s:%d , Function: %s,\n", frame.File, frame.Line, frame.Function)
 		}
 		if !more {
