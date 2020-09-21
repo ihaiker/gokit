@@ -39,6 +39,7 @@ func TestRpcServer(t *testing.T) {
 func TestRpcClient(t *testing.T) {
 	client := NewClient(":6379", onMessage, nil)
 	if err := client.Start(); err != nil {
+		t.Log(client.Close())
 		t.Fatal(err)
 	}
 	time.Sleep(time.Second)

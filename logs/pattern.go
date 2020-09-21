@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const DEFAULT_PATTERN = "[%L][%a] %d{2006-01-02 15:04:05} %f:%l %F %m"
+const DEFAULT_PATTERN = "[%L]%d{2006-01-02 15:04:05} [%a] %f:%l %F %m"
 
 type content func(entry *entry) []byte
 

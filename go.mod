@@ -1,9 +1,8 @@
 module github.com/ihaiker/gokit
 
-go 1.12.1
+go 1.14
 
 require (
-	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/jinzhu/configor v1.1.1
